@@ -36,6 +36,19 @@ class ClassCell {
     this.tough = false,
   });
 
+  bool sameClass(ClassCell? other) =>
+      other != null &&
+      course == other.course &&
+      teacher == other.teacher &&
+      room == other.room;
+
+  /// `COURSE · TEACHER · ROOM`, leaving out a blank teacher.
+  String get label => [
+        course,
+        if (teacher.isNotEmpty) teacher,
+        room,
+      ].join(' · ');
+
   Map<String, dynamic> toJson() => {
         'course': course,
         'teacher': teacher,

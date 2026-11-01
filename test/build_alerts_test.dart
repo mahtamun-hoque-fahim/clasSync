@@ -130,7 +130,18 @@ void main() {
     expect(buildAlerts(r).single.weekday, DateTime.saturday);
   });
 
+  test('empty teacher is left out of the title', () {
+    final r = routine().withCell(
+      'Wed',
+      4,
+      const ClassCell(course: 'JAVA', teacher: '', room: '220'),
+    );
+    final titles = on(buildAlerts(r), DateTime.wednesday).map((a) => a.title);
+    expect(titles, contains('JAVA · 220'));
+  });
+
   test('empty routine has no alerts', () {
     expect(buildAlerts(Routine.empty()), isEmpty);
   });
 }
+

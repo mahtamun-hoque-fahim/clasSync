@@ -39,10 +39,10 @@ List<Alert> buildAlerts(Routine r) {
     for (var i = 0; i < row.length; i++) {
       final cell = row[i];
       if (cell == null) continue;
-      if (i > 0 && _sameClass(row[i - 1], cell)) continue;
+      if (i > 0 && cell.sameClass(row[i - 1])) continue;
 
       var tough = cell.tough;
-      for (var j = i + 1; j < row.length && _sameClass(row[j], cell); j++) {
+      for (var j = i + 1; j < row.length && cell.sameClass(row[j]); j++) {
         tough = tough || row[j]!.tough;
       }
 
@@ -57,7 +57,7 @@ List<Alert> buildAlerts(Routine r) {
         id: weekday * 100 + i,
         weekday: alertDay,
         minuteOfDay: minute,
-        title: '${cell.course} · ${cell.teacher} · ${cell.room}',
+        title: cell.label,
         body: tough
             ? '${start.start}\nSnacks before the class.'
             : start.start,
@@ -83,10 +83,3 @@ List<Alert> buildAlerts(Routine r) {
   }
   return alerts;
 }
-
-bool _sameClass(ClassCell? a, ClassCell? b) =>
-    a != null &&
-    b != null &&
-    a.course == b.course &&
-    a.teacher == b.teacher &&
-    a.room == b.room;

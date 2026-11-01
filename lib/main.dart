@@ -6,6 +6,7 @@ import 'data/routine_repo.dart';
 import 'firebase_options.dart';
 import 'model/routine.dart';
 import 'theme.dart';
+import 'ui/home_page.dart';
 import 'ui/sign_in_page.dart';
 
 Future<void> main() async {
@@ -57,7 +58,7 @@ class _SignedInAppState extends State<_SignedInApp> {
         return MaterialApp(
           title: 'ClasSync',
           theme: buildTheme(routine.accent),
-          home: Scaffold(body: Center(child: Text(routine.accent))),
+          home: HomePage(repo: widget.repo),
         );
       },
     );
