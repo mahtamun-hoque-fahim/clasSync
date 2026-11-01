@@ -7,6 +7,7 @@ import '../model/routine.dart';
 import '../model/today.dart';
 import '../theme.dart';
 import 'grid_page.dart';
+import 'settings_page.dart';
 
 class HomePage extends StatefulWidget {
   final RoutineRepo repo;
@@ -48,6 +49,11 @@ class _HomePageState extends State<HomePage> {
             tooltip: 'Week',
             icon: const Icon(Icons.grid_view_rounded),
             onPressed: () => _open(GridPage(repo: widget.repo)),
+          ),
+          IconButton(
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => _open(SettingsPage(repo: widget.repo)),
           ),
         ],
       ),

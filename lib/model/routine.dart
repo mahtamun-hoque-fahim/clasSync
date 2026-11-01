@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 const validDays = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 const _validAccents = {
   'blue',
@@ -117,6 +119,23 @@ class Routine {
     return copyWith(periods: newPeriods, cells: resized);
   }
 
+  /// Drops one period and its cell in every row, keeping the other columns aligned.
+  Routine withoutPeriod(int index) => copyWith(
+        periods: [...periods]..removeAt(index),
+        cells: cells.map(
+          (day, row) => MapEntry(day, [...row]..removeAt(index)),
+        ),
+      );
+
+  /// Replaces the class days. Rows of removed days are dropped, as [parse] rejects them.
+  Routine withDays(List<String> newDays) => copyWith(
+        days: newDays,
+        cells: {
+          for (final entry in cells.entries)
+            if (newDays.contains(entry.key)) entry.key: entry.value,
+        },
+      );
+
   Map<String, dynamic> toJson() => {
         'accent': accent,
         'days': days,
@@ -126,6 +145,17 @@ class Routine {
           (day, row) => MapEntry(day, row.map((c) => c?.toJson()).toList()),
         ),
       };
+
+  /// Like [parse], for raw text from an imported file.
+  static (Routine?, List<String>) parseText(String text) {
+    try {
+      final json = jsonDecode(text);
+      if (json is Map<String, dynamic>) return parse(json);
+      return (null, ['The file must be one JSON object.']);
+    } on FormatException catch (e) {
+      return (null, ['This is not valid JSON: ${e.message}']);
+    }
+  }
 
   /// Returns the routine, or null with every problem found. Never throws on bad input.
   static (Routine?, List<String>) parse(Map<String, dynamic> json) {

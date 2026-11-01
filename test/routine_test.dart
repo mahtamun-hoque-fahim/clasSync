@@ -127,6 +127,36 @@ void main() {
     expect(changed.row('Wed')[2]!.course, 'X');
   });
 
+  test('withoutPeriod drops that column from every row', () {
+    final r = parsed().withoutPeriod(1);
+    expect(r.periods.length, 5);
+    expect(r.periods[1].start, '11:20');
+    expect(r.row('Sun')[1]!.course, 'STAT');
+    expect(r.row('Tue').length, 5);
+    expect(Routine.parse(r.toJson()).$2, isEmpty);
+  });
+
+  test('withDays drops rows of removed days and stays valid', () {
+    final r = parsed().withDays(['Sun', 'Mon']);
+    expect(r.cells.containsKey('Tue'), isFalse);
+    expect(Routine.parse(r.toJson()).$2, isEmpty);
+  });
+
+  test('parseText reads good JSON', () {
+    final text = File('test/fixtures/routine.json').readAsStringSync();
+    expect(Routine.parseText(text).$1!.days.length, 4);
+  });
+
+  test('parseText rejects text that is not JSON', () {
+    final (routine, errors) = Routine.parseText('{oops');
+    expect(routine, isNull);
+    expect(errors.single, contains('not valid JSON'));
+  });
+
+  test('parseText rejects JSON that is not an object', () {
+    expect(Routine.parseText('[1, 2]').$1, isNull);
+  });
+
   test('Routine.empty has no days', () {
     final r = Routine.empty();
     expect(r.days, isEmpty);
