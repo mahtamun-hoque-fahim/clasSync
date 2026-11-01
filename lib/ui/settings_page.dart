@@ -104,6 +104,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _editTeacher(Routine r, [String? initials]) async {
+    // Not disposed here: the dialog still uses them while animating closed.
     final code = TextEditingController(text: initials);
     final name = TextEditingController(text: r.teachers[initials]);
     final save = await showDialog<bool>(
@@ -139,8 +140,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
     final newCode = code.text.trim();
     final newName = name.text.trim();
-    code.dispose();
-    name.dispose();
     if (save != true || newCode.isEmpty) return;
     final teachers = {...r.teachers}..remove(initials);
     teachers[newCode] = newName;

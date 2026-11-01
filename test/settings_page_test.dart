@@ -101,6 +101,18 @@ void main() {
     expect(repo.saved!.row('Sun')[1]!.course, 'STAT');
   });
 
+  testWidgets('adding a teacher saves the name', (tester) async {
+    final repo = await pump(tester, routine);
+    await tester.tap(find.text('Add teacher'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Initials'), 'ZZ');
+    await tester.enterText(find.widgetWithText(TextField, 'Full name'), 'Zed');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+    expect(repo.saved!.teachers['ZZ'], 'Zed');
+    expect(repo.saved!.teachers['SJ'], 'Sabiha Jahan');
+  });
+
   testWidgets('export shows the routine as JSON', (tester) async {
     await pump(tester, routine);
     await tester.tap(find.text('Export JSON'));

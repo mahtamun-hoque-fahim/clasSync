@@ -2,18 +2,23 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../alerts/build_ct_alerts.dart';
 import '../alerts/scheduler.dart';
+import '../data/ct_repo.dart';
 import '../data/routine_repo.dart';
+import '../model/ct.dart';
 import '../model/routine.dart';
 import '../model/today.dart';
 import '../theme.dart';
+import 'ct_editor.dart';
 import 'grid_page.dart';
 import 'settings_page.dart';
 
 class HomePage extends StatefulWidget {
   final RoutineRepo repo;
+  final CtRepo ctRepo;
 
-  const HomePage({super.key, required this.repo});
+  const HomePage({super.key, required this.repo, required this.ctRepo});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -21,6 +26,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late final Stream<Routine> _routine = widget.repo.watch();
+  late final Stream<List<Ct>> _cts = widget.ctRepo.watch();
   late final Timer _clock;
 
   @override
@@ -63,6 +69,63 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  Future<void> _editCt([Ct? ct]) async {
+    final edit = await showCtEditor(context, initial: ct);
+    if (edit == null) return;
+    final saved = edit.ct;
+    if (saved != null) {
+      await widget.ctRepo.save(saved);
+    } else if (ct != null) {
+      await widget.ctRepo.delete(ct.id);
+    }
+  }
+
+  Widget _ctSection() {
+    return StreamBuilder<List<Ct>>(
+      stream: _cts,
+      builder: (context, snapshot) {
+        // The list can outlive a CT's time while this screen stays open.
+        final now = DateTime.now();
+        final cts = (snapshot.data ?? const <Ct>[])
+            .where((ct) => ct.at.isAfter(now))
+            .toList();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Upcoming CTs',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: _editCt,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add CT'),
+                  ),
+                ],
+              ),
+            ),
+            for (final ct in cts)
+              Card(
+                child: ListTile(
+                  title: Text(
+                    ct.room == null ? ct.course : '${ct.course} · ${ct.room}',
+                  ),
+                  subtitle: Text(formatCtTime(ct.at)),
+                  onTap: () => _editCt(ct),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
   void _open(Widget page) => Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => page),
       );
@@ -102,6 +165,7 @@ class _HomePageState extends State<HomePage> {
                 slot: t.next,
                 empty: t.isClassDay ? 'No more classes today' : 'No classes today',
               ),
+              _ctSection(),
               if (t.isClassDay) ...[
                 const SizedBox(height: 12),
                 Padding(

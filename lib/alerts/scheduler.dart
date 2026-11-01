@@ -7,6 +7,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../theme.dart';
 import 'build_alerts.dart';
+import 'build_ct_alerts.dart';
 
 const _channelId = 'class_alerts';
 const _testAlertId = 9999;
@@ -91,14 +92,16 @@ class AlertScheduler {
           : AndroidScheduleMode.exactAllowWhileIdle;
 
   /// Replaces everything scheduled, so edited or removed classes leave no stale alert.
-  Future<void> reschedule(List<Alert> alerts) {
+  Future<void> reschedule(List<Alert> alerts, List<CtAlert> ctAlerts) {
     if (kIsWeb) return Future.value();
-    return _queue = _queue.then((_) => _replaceAll(alerts)).catchError((Object e) {
+    return _queue = _queue
+        .then((_) => _replaceAll(alerts, ctAlerts))
+        .catchError((Object e) {
       debugPrint('Could not schedule alerts: $e');
     });
   }
 
-  Future<void> _replaceAll(List<Alert> alerts) async {
+  Future<void> _replaceAll(List<Alert> alerts, List<CtAlert> ctAlerts) async {
     await _plugin.cancelAll();
     final mode = await _mode();
     final now = tz.TZDateTime.now(tz.local);
@@ -111,6 +114,16 @@ class AlertScheduler {
         notificationDetails: _details(alert.body, tough: alert.tough),
         androidScheduleMode: mode,
         matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+      );
+    }
+    for (final alert in ctAlerts) {
+      await _plugin.zonedSchedule(
+        id: alert.id,
+        title: alert.title,
+        body: alert.body,
+        scheduledDate: tz.TZDateTime.from(alert.when, tz.local),
+        notificationDetails: _details(alert.body),
+        androidScheduleMode: mode,
       );
     }
   }
