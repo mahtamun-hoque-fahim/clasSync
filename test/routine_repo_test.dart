@@ -29,4 +29,11 @@ void main() {
   test('bad doc keeps the last good routine', () {
     expect(decodeRoutine({'days': 'nope'}, last), same(last));
   });
+
+  test('bad doc with nothing to fall back on is an error, not empty', () {
+    expect(
+      () => decodeRoutine({'days': 'nope'}, null),
+      throwsA(isA<InvalidRoutine>()),
+    );
+  });
 }

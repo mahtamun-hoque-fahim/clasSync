@@ -3,15 +3,24 @@ import 'package:flutter/foundation.dart';
 
 import '../model/routine.dart';
 
+class InvalidRoutine implements Exception {
+  final List<String> errors;
+
+  const InvalidRoutine(this.errors);
+
+  @override
+  String toString() => 'Stored routine is invalid: $errors';
+}
+
 /// A missing doc is a new user. A doc that fails to parse keeps [last] on screen.
-Routine decodeRoutine(Map<String, dynamic>? data, Routine last) {
+/// With no [last] it throws, because an empty routine would cancel every alert.
+Routine decodeRoutine(Map<String, dynamic>? data, Routine? last) {
   if (data == null) return Routine.empty();
   final (routine, errors) = Routine.parse(data);
-  if (routine == null) {
-    debugPrint('Stored routine is invalid: $errors');
-    return last;
-  }
-  return routine;
+  if (routine != null) return routine;
+  debugPrint('Stored routine is invalid: $errors');
+  if (last != null) return last;
+  throw InvalidRoutine(errors);
 }
 
 class RoutineRepo {
@@ -23,7 +32,7 @@ class RoutineRepo {
       FirebaseFirestore.instance.collection('routines').doc(uid);
 
   Stream<Routine> watch() {
-    var last = Routine.empty();
+    Routine? last;
     return _doc.snapshots().map((snapshot) {
       return last = decodeRoutine(snapshot.data(), last);
     });

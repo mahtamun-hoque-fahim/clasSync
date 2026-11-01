@@ -4,6 +4,7 @@ import '../data/routine_repo.dart';
 import '../model/routine.dart';
 import '../theme.dart';
 import 'cell_editor.dart';
+import 'sync_error.dart';
 
 class GridPage extends StatefulWidget {
   final RoutineRepo repo;
@@ -33,6 +34,7 @@ class _GridPageState extends State<GridPage> {
       body: StreamBuilder<Routine>(
         stream: _routine,
         builder: (context, snapshot) {
+          if (snapshot.hasError) return const Center(child: SyncError());
           final r = snapshot.data;
           if (r == null) {
             return const Center(child: CircularProgressIndicator());
