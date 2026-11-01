@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'alerts/alert_sync.dart';
 import 'alerts/scheduler.dart';
 import 'data/ct_repo.dart';
+import 'data/google_auth.dart';
 import 'data/routine_repo.dart';
 import 'firebase_options.dart';
 import 'model/ct.dart';
@@ -85,7 +86,7 @@ class _SignedInAppState extends State<_SignedInApp> {
 
   Future<void> _signOut() async {
     await alertScheduler.clear();
-    await FirebaseAuth.instance.signOut();
+    await signOutOfGoogle();
   }
 
   @override

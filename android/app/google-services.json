@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "902685771964-e9irck2aoalmln18dd5ip4jsbrgq90ej.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.classync.classync",
+            "certificate_hash": "707fcd7085da68a4afec383b50af6ebc43a4558c"
+          }
+        },
+        {
           "client_id": "902685771964-lf0adn999ru0m4ij0d8b5jl057uuioig.apps.googleusercontent.com",
           "client_type": 3
         }

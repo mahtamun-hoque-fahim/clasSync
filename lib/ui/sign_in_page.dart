@@ -1,9 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+
+import '../data/google_auth.dart';
 
 class SignInPage extends StatefulWidget {
-  const SignInPage({super.key});
+  final Future<void> Function() signIn;
+
+  const SignInPage({super.key, this.signIn = signInWithGoogle});
 
   @override
   State<SignInPage> createState() => _SignInPageState();
@@ -12,21 +16,24 @@ class SignInPage extends StatefulWidget {
 class _SignInPageState extends State<SignInPage> {
   bool _busy = false;
 
+  void _showFailure(String reason) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Sign-in failed: $reason')),
+    );
+  }
+
   Future<void> _signIn() async {
     setState(() => _busy = true);
-    final provider = GoogleAuthProvider();
     try {
-      if (kIsWeb) {
-        await FirebaseAuth.instance.signInWithPopup(provider);
-      } else {
-        await FirebaseAuth.instance.signInWithProvider(provider);
+      await widget.signIn();
+    } on GoogleSignInException catch (e) {
+      // Closing the account picker is not a failure.
+      if (e.code != GoogleSignInExceptionCode.canceled) {
+        _showFailure(e.description ?? e.code.name);
       }
     } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign-in failed: ${e.message ?? e.code}')),
-        );
-      }
+      _showFailure(e.message ?? e.code);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
