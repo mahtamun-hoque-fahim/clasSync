@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../alerts/scheduler.dart';
 import '../data/routine_repo.dart';
 import '../model/routine.dart';
 import '../theme.dart';
@@ -282,6 +283,25 @@ class _SettingsPageState extends State<SettingsPage> {
                   label: const Text('Add teacher'),
                 ),
               ),
+              if (!kIsWeb) ...[
+                _heading(context, 'Alerts'),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      await alertScheduler.sendTest();
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Test alert coming in 10 seconds. Lock your phone.'),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.notifications_active_outlined),
+                    label: const Text('Send test alert in 10 s'),
+                  ),
+                ),
+              ],
               _heading(context, 'Backup and new semester'),
               Wrap(
                 spacing: 8,

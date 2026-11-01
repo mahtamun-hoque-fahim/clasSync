@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../alerts/scheduler.dart';
 import '../data/routine_repo.dart';
 import '../model/routine.dart';
 import '../model/today.dart';
@@ -27,6 +28,33 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     // Keeps the Now and Next cards current while the screen stays open.
     _clock = Timer.periodic(const Duration(minutes: 1), (_) => setState(() {}));
+    _askForPermissions();
+  }
+
+  Future<void> _askForPermissions() async {
+    if (!await alertScheduler.needsPermissions() || !mounted) return;
+    final proceed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Allow class alerts'),
+        content: const Text(
+          'To wake your screen 5 minutes before class, ClasSync needs to send '
+          'notifications, set exact alarms, and run without battery limits. '
+          'Android will ask you for each one.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+    if (proceed == true) await alertScheduler.requestPermissions();
   }
 
   @override

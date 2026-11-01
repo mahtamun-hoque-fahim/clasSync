@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
+import 'alerts/build_alerts.dart';
+import 'alerts/scheduler.dart';
 import 'data/routine_repo.dart';
 import 'firebase_options.dart';
 import 'model/routine.dart';
@@ -12,6 +16,7 @@ import 'ui/sign_in_page.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await alertScheduler.init();
   runApp(const ClasSyncApp());
 }
 
@@ -47,7 +52,20 @@ class _SignedInApp extends StatefulWidget {
 }
 
 class _SignedInAppState extends State<_SignedInApp> {
-  late final Stream<Routine> _routine = widget.repo.watch();
+  late final Stream<Routine> _routine = widget.repo.watch().asBroadcastStream();
+  late final StreamSubscription<Routine> _alerts;
+
+  @override
+  void initState() {
+    super.initState();
+    _alerts = _routine.listen((r) => alertScheduler.reschedule(buildAlerts(r)));
+  }
+
+  @override
+  void dispose() {
+    _alerts.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
