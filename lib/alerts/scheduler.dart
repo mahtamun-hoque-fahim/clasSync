@@ -11,7 +11,7 @@ import 'build_ct_alerts.dart';
 
 const _channelId = 'class_alerts';
 const _testAlertId = 9999;
-const _battery = MethodChannel('classync/battery');
+const _device = MethodChannel('classync/device');
 
 /// The next time this weekday and minute occurs, strictly after [now].
 tz.TZDateTime nextInstance(int weekday, int minuteOfDay, tz.TZDateTime now) {
@@ -38,9 +38,12 @@ tz.TZDateTime nextInstance(int weekday, int minuteOfDay, tz.TZDateTime now) {
 
 /// Local notifications on Android. Every method does nothing on web.
 class AlertScheduler {
-  final _plugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _plugin;
   // Routine updates can arrive close together. Run them in order so they don't interleave.
   Future<void> _queue = Future.value();
+
+  AlertScheduler([FlutterLocalNotificationsPlugin? plugin])
+      : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
   AndroidFlutterLocalNotificationsPlugin? get _android =>
       _plugin.resolvePlatformSpecificImplementation<
@@ -102,30 +105,68 @@ class AlertScheduler {
   }
 
   Future<void> _replaceAll(List<Alert> alerts, List<CtAlert> ctAlerts) async {
-    await _plugin.cancelAll();
+    // Pending only: cancelAll would also remove the alert the user is looking at.
+    await _plugin.cancelAllPendingNotifications();
     final mode = await _mode();
     final now = tz.TZDateTime.now(tz.local);
     for (final alert in alerts) {
-      await _plugin.zonedSchedule(
+      await _scheduleSafely(
         id: alert.id,
         title: alert.title,
         body: alert.body,
-        scheduledDate: nextInstance(alert.weekday, alert.minuteOfDay, now),
-        notificationDetails: _details(alert.body, tough: alert.tough),
-        androidScheduleMode: mode,
-        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+        when: nextInstance(alert.weekday, alert.minuteOfDay, now),
+        details: _details(alert.body, tough: alert.tough),
+        mode: mode,
+        repeat: DateTimeComponents.dayOfWeekAndTime,
       );
     }
     for (final alert in ctAlerts) {
-      await _plugin.zonedSchedule(
+      await _scheduleSafely(
         id: alert.id,
         title: alert.title,
         body: alert.body,
-        scheduledDate: tz.TZDateTime.from(alert.when, tz.local),
-        notificationDetails: _details(alert.body),
-        androidScheduleMode: mode,
+        when: tz.TZDateTime.from(alert.when, tz.local),
+        details: _details(alert.body),
+        mode: mode,
       );
     }
+  }
+
+  // One bad alert (say, a CT reminder that just came due) must not drop the rest.
+  Future<void> _scheduleSafely({
+    required int id,
+    required String title,
+    required String body,
+    required tz.TZDateTime when,
+    required NotificationDetails details,
+    required AndroidScheduleMode mode,
+    DateTimeComponents? repeat,
+  }) async {
+    try {
+      await _plugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: when,
+        notificationDetails: details,
+        androidScheduleMode: mode,
+        matchDateTimeComponents: repeat,
+      );
+    } on Object catch (e) {
+      debugPrint('Could not schedule alert $id: $e');
+    }
+  }
+
+  /// Removes scheduled alerts, for sign-out.
+  Future<void> clear() {
+    if (kIsWeb) return Future.value();
+    return _queue = _queue.then((_) => _plugin.cancelAllPendingNotifications());
+  }
+
+  /// True if the user may edit: not on the lock screen, or they just unlocked.
+  Future<bool> unlock() async {
+    if (kIsWeb || _android == null) return true;
+    return await _device.invokeMethod<bool>('unlock') ?? false;
   }
 
   /// Fires a sample alert in 10 seconds so the user can check it on their phone.
@@ -149,7 +190,13 @@ class AlertScheduler {
     if (android == null) return false;
     return await android.areNotificationsEnabled() == false ||
         await android.canScheduleExactNotifications() == false ||
-        await _battery.invokeMethod<bool>('isIgnoringBatteryOptimizations') == false;
+        await _device.invokeMethod<bool>('canUseFullScreenIntent') == false ||
+        await _device.invokeMethod<bool>('isIgnoringBatteryOptimizations') == false;
+  }
+
+  Future<bool> isLocked() async {
+    if (kIsWeb || _android == null) return false;
+    return await _device.invokeMethod<bool>('isLocked') ?? false;
   }
 
   /// Asks only for what is missing.
@@ -159,12 +206,14 @@ class AlertScheduler {
     if (await android.areNotificationsEnabled() == false) {
       await android.requestNotificationsPermission();
     }
-    await android.requestFullScreenIntentPermission();
+    if (await _device.invokeMethod<bool>('canUseFullScreenIntent') == false) {
+      await android.requestFullScreenIntentPermission();
+    }
     if (await android.canScheduleExactNotifications() == false) {
       await android.requestExactAlarmsPermission();
     }
-    if (await _battery.invokeMethod<bool>('isIgnoringBatteryOptimizations') == false) {
-      await _battery.invokeMethod<void>('requestIgnoreBatteryOptimizations');
+    if (await _device.invokeMethod<bool>('isIgnoringBatteryOptimizations') == false) {
+      await _device.invokeMethod<void>('requestIgnoreBatteryOptimizations');
     }
   }
 }
