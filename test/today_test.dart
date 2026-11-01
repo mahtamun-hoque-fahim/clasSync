@@ -6,7 +6,7 @@ import 'package:classync/model/today.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Routine routine() => Routine.parse(
-      jsonDecode(File('test/fixtures/routine.json').readAsStringSync())
+      jsonDecode(File('assets/default_routine.json').readAsStringSync())
           as Map<String, dynamic>,
     ).$1!;
 

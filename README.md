@@ -19,7 +19,9 @@ Phone on full silent? Some phones only vibrate in **vibrate** mode, so test with
 
 ## New semester
 
-In **Settings → Import JSON**, paste or upload a file in the format of [test/fixtures/routine.json](test/fixtures/routine.json). This replaces the routine. CTs are not affected.
+A new account starts with the routine in [assets/default_routine.json](assets/default_routine.json).
+
+In **Settings → Import JSON**, paste or upload a file in the format of [assets/default_routine.json](assets/default_routine.json). This replaces the routine. CTs are not affected.
 
 ## Development
 

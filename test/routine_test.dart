@@ -5,7 +5,7 @@ import 'package:classync/model/routine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Map<String, dynamic> fixture() =>
-    jsonDecode(File('test/fixtures/routine.json').readAsStringSync())
+    jsonDecode(File('assets/default_routine.json').readAsStringSync())
         as Map<String, dynamic>;
 
 Routine parsed() => Routine.parse(fixture()).$1!;
@@ -143,7 +143,7 @@ void main() {
   });
 
   test('parseText reads good JSON', () {
-    final text = File('test/fixtures/routine.json').readAsStringSync();
+    final text = File('assets/default_routine.json').readAsStringSync();
     expect(Routine.parseText(text).$1!.days.length, 4);
   });
 

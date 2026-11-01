@@ -9,7 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'fake_repo.dart';
 
 void main() {
-  final text = File('test/fixtures/routine.json').readAsStringSync();
+  final text = File('assets/default_routine.json').readAsStringSync();
   final routine = Routine.parse(jsonDecode(text) as Map<String, dynamic>).$1!;
 
   Future<FakeRepo> pump(WidgetTester tester, Routine r) async {

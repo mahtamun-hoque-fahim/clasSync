@@ -10,7 +10,7 @@ import 'fake_repo.dart';
 
 void main() {
   final routine = Routine.parse(
-    jsonDecode(File('test/fixtures/routine.json').readAsStringSync())
+    jsonDecode(File('assets/default_routine.json').readAsStringSync())
         as Map<String, dynamic>,
   ).$1!;
 

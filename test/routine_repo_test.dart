@@ -11,6 +11,25 @@ void main() {
     cells: {},
   );
 
+  test('seeds only when the server confirms there is no routine', () {
+    expect(shouldSeed(exists: false, fromCache: false), isTrue);
+    expect(shouldSeed(exists: false, fromCache: true), isFalse);
+    expect(shouldSeed(exists: true, fromCache: false), isFalse);
+    expect(shouldSeed(exists: true, fromCache: true), isFalse);
+  });
+
+  test('the bundled default routine is the class timetable', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final seed = await loadDefaultRoutine();
+    expect(seed.days, ['Sun', 'Mon', 'Tue', 'Wed']);
+    expect(seed.periods.length, 6);
+    expect(seed.row('Sun')[1]!.course, 'DLD Lab');
+    expect(seed.row('Sun')[1]!.tough, isTrue);
+    expect(seed.row('Mon')[5]!.room, '223');
+    expect(seed.row('Tue')[5], isNull);
+    expect(seed.teachers['AI'], 'Arfanul Islam');
+  });
+
   test('missing doc gives an empty routine', () {
     expect(decodeRoutine(null, last).days, isEmpty);
   });
