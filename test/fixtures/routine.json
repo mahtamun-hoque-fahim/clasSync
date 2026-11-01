@@ -1,0 +1,54 @@
+{
+  "accent": "blue",
+  "days": ["Sun", "Mon", "Tue", "Wed"],
+  "periods": [
+    {"start": "09:30", "end": "10:20"},
+    {"start": "10:25", "end": "11:15"},
+    {"start": "11:20", "end": "12:10"},
+    {"start": "12:15", "end": "13:05"},
+    {"start": "13:10", "end": "14:00"},
+    {"start": "14:05", "end": "14:55"}
+  ],
+  "teachers": {
+    "SJ": "Sabiha Jahan",
+    "ASD": "Md Asaduzzaman",
+    "SNS": "Shamsun Nahar Shoma",
+    "NA": "Nurul Absar",
+    "MA": "Manjur Alam",
+    "AI": "Arfanul Islam"
+  },
+  "cells": {
+    "Sun": [
+      {"course": "DM", "teacher": "SJ", "room": "121"},
+      {"course": "DLD Lab", "teacher": "ASD", "room": "140", "tough": true},
+      {"course": "STAT", "teacher": "SNS", "room": "227"},
+      null,
+      {"course": "BE", "teacher": "NA", "room": "221"},
+      {"course": "JAVA", "teacher": "MA", "room": "221"}
+    ],
+    "Mon": [
+      {"course": "JAVA lab", "teacher": "MA", "room": "121", "tough": true},
+      {"course": "JAVA lab", "teacher": "MA", "room": "121", "tough": true},
+      {"course": "DM", "teacher": "SJ", "room": "219"},
+      {"course": "JAVA", "teacher": "MA", "room": "118"},
+      {"course": "MATH3", "teacher": "SNS", "room": "223"},
+      {"course": "BE", "teacher": "NA", "room": "223"}
+    ],
+    "Tue": [
+      {"course": "DLD", "teacher": "ASD", "room": "224"},
+      {"course": "Math-3", "teacher": "SNS", "room": "224"},
+      {"course": "BE", "teacher": "NA", "room": "224"},
+      {"course": "STAT", "teacher": "SNS", "room": "224"},
+      null,
+      null
+    ],
+    "Wed": [
+      {"course": "DLD", "teacher": "ASD", "room": "220"},
+      {"course": "DLD", "teacher": "ASD", "room": "220"},
+      {"course": "MATH3", "teacher": "SNS", "room": "220"},
+      {"course": "BE LAB", "teacher": "AI", "room": "140", "tough": true},
+      {"course": "JAVA", "teacher": "MA", "room": "220"},
+      {"course": "DM", "teacher": "SJ", "room": "220"}
+    ]
+  }
+}
