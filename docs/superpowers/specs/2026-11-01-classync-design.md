@@ -18,6 +18,7 @@ The routine is edited from a web dashboard or the app, and both stay in sync. It
 - Days, period count and period times are editable, so a new semester is one import or a few edits.
 - Same data on phone and web, synced live.
 - Alerts work with no internet in class.
+- CT (class test) reminders: add a CT whenever one is announced, get reminders at chosen times before it, and it deletes itself once its time has passed.
 
 ## Non-goals (for now)
 
@@ -97,6 +98,17 @@ All derived by one pure function `buildAlerts(routine) -> List<Alert>`, which is
 - **Gap periods:** every empty period on a class day, including the ones before the first class or after the last one (Tue P5–P6 count as 2). If count > 0, alert at 08:00: "N gap periods today: 12:15–13:05, …". A class day with no classes at all gets no alerts.
 - **Non-class days:** days not in `days` get no alerts.
 
+### CT reminders
+
+- Stored as `routines/{uid}/cts/{ctId}`, separate from the routine doc, so importing a new routine never touches CTs. Same owner-only security rule.
+- Fields: `course`, `at` (date and time), optional `room`, optional `note`, `remindBefore` (list of minutes, e.g. `[1440, 360, 60]`).
+- Add form (phone and web): course, date, time, room, note, and reminder chips: 1 hour, 6 hours, 1 day, 2 days, 1 week, plus custom. New CTs start with 1 day, 6 hours and 1 hour ticked, changeable per CT (my call).
+- CTs can be edited or deleted by hand before they happen.
+- Once `at` has passed, the CT is permanently deleted, with no history. Any signed-in client (phone or web) deletes expired CTs when it receives the CT list.
+- Alert: same channel as class alerts (vibration, no sound). Title `CT: COURSE · ROOM` (`CT: COURSE` without a room). Body `in 6 hours · Thu 5 Nov, 09:30`, then the note on a new line if present.
+- One-off alerts, scheduled on the phone so they work offline. Reminder times already in the past are skipped.
+- CT reminders are not included in JSON import/export.
+
 ### Notification delivery (Android)
 
 - Each alert is scheduled as a weekly repeat (`matchDateTimeComponents: dayOfWeekAndTime`, `exactAllowWhileIdle`), so it keeps firing without the app being opened.
@@ -115,15 +127,16 @@ All derived by one pure function `buildAlerts(routine) -> List<Alert>`, which is
 
 ### Screens
 
-- **Phone home:** "Now" and "Next" cards for today, then today's list. Tap the grid icon for the full week.
+- **Phone home:** "Now" and "Next" cards for today, then upcoming CTs (soonest first, with an add button), then today's list. Tap the grid icon for the full week.
 - **Grid (phone + web):** days × periods. Tap a cell to edit course / teacher / room / tough, or clear it. Edit day list, period times and teacher names from a settings panel.
-- **Web dashboard:** same grid, plus Import JSON (paste or file) and Export JSON.
+- **Web dashboard:** same grid and upcoming CTs, plus Import JSON (paste or file) and Export JSON.
 - **Sign-in:** Google, same account on web and phone.
 
 ## Testing
 
 - Unit tests for `buildAlerts`: block merging, 5-min offset, gap counting (middle and trailing), tough note, off days, period crossing noon.
 - Unit tests for JSON import validation (good file, each kind of bad file).
+- Unit tests for CT alerts: reminder times, past reminders skipped, title without room, note in body, which CTs count as expired.
 - Manual on a real Android phone: test-alert button, phone locked on silent, after reboot, after a routine edit from web.
 
 ## Left to the builder
