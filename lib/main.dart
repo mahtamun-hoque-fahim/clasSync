@@ -4,8 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
-import 'alerts/build_alerts.dart';
-import 'alerts/build_ct_alerts.dart';
+import 'alerts/alert_sync.dart';
 import 'alerts/scheduler.dart';
 import 'data/ct_repo.dart';
 import 'data/routine_repo.dart';
@@ -63,37 +62,35 @@ class _SignedInAppState extends State<_SignedInApp> {
   late final Stream<Routine> _routine = widget.repo.watch().asBroadcastStream();
   late final StreamSubscription<Routine> _routineAlerts;
   late final StreamSubscription<List<Ct>> _ctAlerts;
-  Routine? _latestRoutine;
-  List<Ct>? _latestCts;
+  final _sync = AlertSync(alertScheduler.reschedule);
+  // Returning from Android settings may have granted exact alarms, which only
+  // apply to alerts scheduled afterwards.
+  late final _lifecycle = AppLifecycleListener(onResume: _sync.refresh);
 
   @override
   void initState() {
     super.initState();
-    _routineAlerts = _routine.listen((r) {
-      _latestRoutine = r;
-      _reschedule();
-    }, onError: _logError);
-    _ctAlerts = widget.ctRepo.watch().listen((cts) {
-      _latestCts = cts;
-      _reschedule();
-    }, onError: _logError);
+    _lifecycle;
+    _routineAlerts = _routine.listen(
+      (r) => _sync.routine = r,
+      onError: _logError,
+    );
+    _ctAlerts = widget.ctRepo.watch().listen(
+      (cts) => _sync.cts = cts,
+      onError: _logError,
+    );
   }
 
   void _logError(Object e) => debugPrint('Sync failed: $e');
 
-  // Waits for both lists, because rescheduling replaces every alert.
-  void _reschedule() {
-    final routine = _latestRoutine;
-    final cts = _latestCts;
-    if (routine == null || cts == null) return;
-    alertScheduler.reschedule(
-      buildAlerts(routine),
-      buildCtAlerts(cts, DateTime.now()),
-    );
+  Future<void> _signOut() async {
+    await alertScheduler.clear();
+    await FirebaseAuth.instance.signOut();
   }
 
   @override
   void dispose() {
+    _lifecycle.dispose();
     _routineAlerts.cancel();
     _ctAlerts.cancel();
     super.dispose();
@@ -108,7 +105,11 @@ class _SignedInAppState extends State<_SignedInApp> {
         return MaterialApp(
           title: 'ClasSync',
           theme: buildTheme(routine.accent),
-          home: HomePage(repo: widget.repo, ctRepo: widget.ctRepo),
+          home: HomePage(
+            repo: widget.repo,
+            ctRepo: widget.ctRepo,
+            onSignOut: _signOut,
+          ),
         );
       },
     );
