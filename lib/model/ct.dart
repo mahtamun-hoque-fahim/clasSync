@@ -26,17 +26,24 @@ class Ct {
         'remindBefore': remindBefore,
       };
 
-  factory Ct.fromJson(String id, Map<String, dynamic> json) => Ct(
-        id: id,
-        course: '${json['course'] ?? ''}',
-        at: DateTime.fromMillisecondsSinceEpoch(
-          (json['at'] as num?)?.toInt() ?? 0,
-        ),
-        room: json['room'] as String?,
-        note: json['note'] as String?,
-        remindBefore: [
-          for (final minutes in (json['remindBefore'] as List?) ?? const [])
-            (minutes as num).toInt(),
-        ],
-      );
+  /// Returns null for a malformed doc, so it can't be mistaken for an expired CT.
+  static Ct? tryFromJson(String id, Map<String, dynamic> json) {
+    final course = json['course'];
+    final at = json['at'];
+    final room = json['room'];
+    final note = json['note'];
+    final remindBefore = json['remindBefore'] ?? const [];
+    if (course is! String || course.isEmpty || at is! num) return null;
+    if (room != null && room is! String) return null;
+    if (note != null && note is! String) return null;
+    if (remindBefore is! List || remindBefore.any((m) => m is! num)) return null;
+    return Ct(
+      id: id,
+      course: course,
+      at: DateTime.fromMillisecondsSinceEpoch(at.toInt()),
+      room: room as String?,
+      note: note as String?,
+      remindBefore: [for (final m in remindBefore) (m as num).toInt()],
+    );
+  }
 }

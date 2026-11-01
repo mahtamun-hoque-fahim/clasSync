@@ -87,7 +87,7 @@ void main() {
 
   test('json round trip', () {
     final original = ct(note: 'Chapter 3', remindBefore: [1440, 60]);
-    final copy = Ct.fromJson('a', original.toJson());
+    final copy = Ct.tryFromJson('a', original.toJson())!;
     expect(copy.course, 'DLD');
     expect(copy.at, original.at);
     expect(copy.room, '224');
@@ -95,9 +95,24 @@ void main() {
     expect(copy.remindBefore, [1440, 60]);
   });
 
-  test('a stored doc with missing fields does not throw', () {
-    final copy = Ct.fromJson('a', {'course': 'DLD', 'at': 0});
-    expect(copy.remindBefore, isEmpty);
+  test('missing optional fields are fine', () {
+    final copy = Ct.tryFromJson('a', {'course': 'DLD', 'at': 0});
+    expect(copy!.remindBefore, isEmpty);
     expect(copy.room, isNull);
+  });
+
+  test('malformed docs are skipped, not read as expired', () {
+    expect(Ct.tryFromJson('a', {'course': 'DLD'}), isNull);
+    expect(Ct.tryFromJson('a', {'course': 'DLD', 'at': 'soon'}), isNull);
+    expect(Ct.tryFromJson('a', {'at': 0}), isNull);
+    expect(
+      Ct.tryFromJson('a', {
+        'course': 'DLD',
+        'at': 0,
+        'remindBefore': ['x'],
+      }),
+      isNull,
+    );
+    expect(Ct.tryFromJson('a', {'course': 'DLD', 'at': 0, 'room': 5}), isNull);
   });
 }
