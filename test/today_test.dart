@@ -48,6 +48,16 @@ void main() {
     expect(t.next, isNull);
   });
 
+  test('the same course after a gap still counts as next', () {
+    // 2026-11-04 is a Wednesday: DLD in P1 and P2. Empty P2, DLD again in P3.
+    final r = routine()
+        .withCell('Wed', 1, null)
+        .withCell('Wed', 2, routine().row('Wed')[0]);
+    final t = today(r, DateTime(2026, 11, 4, 9, 45));
+    expect(t.now!.cell.course, 'DLD');
+    expect(t.next!.period.start, '11:20');
+  });
+
   test('a class day lists every period', () {
     final t = today(routine(), DateTime(2026, 11, 1, 8, 0));
     expect(t.isClassDay, isTrue);

@@ -33,16 +33,20 @@ Today today(Routine r, DateTime time) {
   final minute = time.hour * 60 + time.minute;
   final row = r.row(day);
   Slot? now, next;
+  // True while walking the rest of a double period that is on now.
+  var inNowBlock = false;
   for (var i = 0; i < row.length; i++) {
     final cell = row[i];
     final period = r.periods[i];
-    if (cell == null) continue;
-    if (period.startMinute <= minute && minute < period.endMinute) {
+    if (cell == null) {
+      inNowBlock = false;
+    } else if (period.startMinute <= minute && minute < period.endMinute) {
       now = Slot(period, cell);
-    } else if (next == null &&
-        period.startMinute > minute &&
-        !cell.sameClass(now?.cell)) {
-      next = Slot(period, cell);
+      inNowBlock = true;
+    } else if (period.startMinute > minute) {
+      if (inNowBlock && cell.sameClass(now?.cell)) continue;
+      inNowBlock = false;
+      next ??= Slot(period, cell);
     }
   }
   return Today(
