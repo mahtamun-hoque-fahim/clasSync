@@ -13,12 +13,21 @@ import '../theme.dart';
 import 'ct_editor.dart';
 import 'grid_page.dart';
 import 'settings_page.dart';
+import 'sync_error.dart';
 
 class HomePage extends StatefulWidget {
   final RoutineRepo repo;
   final CtRepo ctRepo;
+  final Future<void> Function()? onSignOut;
+  final AlertScheduler? scheduler;
 
-  const HomePage({super.key, required this.repo, required this.ctRepo});
+  const HomePage({
+    super.key,
+    required this.repo,
+    required this.ctRepo,
+    this.onSignOut,
+    this.scheduler,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -38,7 +47,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _askForPermissions() async {
-    if (!await alertScheduler.needsPermissions() || !mounted) return;
+    if (!await _scheduler.needsPermissions()) return;
+    if (await _scheduler.isLocked() || !mounted) return;
     final proceed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -60,7 +70,7 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
-    if (proceed == true) await alertScheduler.requestPermissions();
+    if (proceed == true) await _scheduler.requestPermissions();
   }
 
   @override
@@ -69,7 +79,11 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  AlertScheduler get _scheduler => widget.scheduler ?? alertScheduler;
+
+  // Alerts open this page on the lock screen, so editing needs an unlock first.
   Future<void> _editCt([Ct? ct]) async {
+    if (!await _scheduler.unlock() || !mounted) return;
     final edit = await showCtEditor(context, initial: ct);
     if (edit == null) return;
     final saved = edit.ct;
@@ -126,9 +140,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _open(Widget page) => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => page),
-      );
+  Future<void> _open(Widget page) async {
+    if (!await _scheduler.unlock() || !mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => page),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -144,13 +161,16 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             tooltip: 'Settings',
             icon: const Icon(Icons.settings_outlined),
-            onPressed: () => _open(SettingsPage(repo: widget.repo)),
+            onPressed: () => _open(
+              SettingsPage(repo: widget.repo, onSignOut: widget.onSignOut),
+            ),
           ),
         ],
       ),
       body: StreamBuilder<Routine>(
         stream: _routine,
         builder: (context, snapshot) {
+          if (snapshot.hasError) return const Center(child: SyncError());
           final r = snapshot.data;
           if (r == null) {
             return const Center(child: CircularProgressIndicator());

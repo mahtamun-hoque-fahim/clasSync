@@ -9,11 +9,13 @@ import '../alerts/scheduler.dart';
 import '../data/routine_repo.dart';
 import '../model/routine.dart';
 import '../theme.dart';
+import 'sync_error.dart';
 
 class SettingsPage extends StatefulWidget {
   final RoutineRepo repo;
+  final Future<void> Function()? onSignOut;
 
-  const SettingsPage({super.key, required this.repo});
+  const SettingsPage({super.key, required this.repo, this.onSignOut});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -160,6 +162,17 @@ class _SettingsPageState extends State<SettingsPage> {
     if (confirmed) await _save(imported);
   }
 
+  Future<void> _signOut() async {
+    final confirmed = await _confirm(
+      'Sign out?',
+      'Alerts on this phone stop until you sign in again. Your routine stays saved.',
+      'Sign out',
+    );
+    if (!confirmed || !mounted) return;
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    await widget.onSignOut?.call();
+  }
+
   void _export(Routine r) {
     final json = const JsonEncoder.withIndent('  ').convert(r.toJson());
     showDialog<void>(
@@ -188,6 +201,20 @@ class _SettingsPageState extends State<SettingsPage> {
       body: StreamBuilder<Routine>(
         stream: _routine,
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            // Importing again is the way out of a stored routine that can't be read.
+            return ListView(
+              children: [
+                const SyncError(),
+                Center(
+                  child: FilledButton(
+                    onPressed: _import,
+                    child: const Text('Import JSON'),
+                  ),
+                ),
+              ],
+            );
+          }
           final r = snapshot.data;
           if (r == null) {
             return const Center(child: CircularProgressIndicator());
@@ -315,6 +342,16 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ],
               ),
+              if (widget.onSignOut != null) ...[
+                _heading(context, 'Account'),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton(
+                    onPressed: _signOut,
+                    child: const Text('Sign out'),
+                  ),
+                ),
+              ],
             ],
           );
         },

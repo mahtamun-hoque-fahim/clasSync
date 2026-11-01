@@ -113,6 +113,26 @@ void main() {
     expect(repo.saved!.teachers['SJ'], 'Sabiha Jahan');
   });
 
+  testWidgets('sign out runs after confirming', (tester) async {
+    tester.view.physicalSize = const Size(1000, 3000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    var signedOut = false;
+    await tester.pumpWidget(MaterialApp(
+      home: SettingsPage(
+        repo: FakeRepo(routine),
+        onSignOut: () async => signedOut = true,
+      ),
+    ));
+    await tester.pump();
+    await tester.tap(find.text('Sign out'));
+    await tester.pumpAndSettle();
+    expect(signedOut, isFalse);
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign out'));
+    await tester.pumpAndSettle();
+    expect(signedOut, isTrue);
+  });
+
   testWidgets('export shows the routine as JSON', (tester) async {
     await pump(tester, routine);
     await tester.tap(find.text('Export JSON'));
