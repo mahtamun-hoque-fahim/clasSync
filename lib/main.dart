@@ -16,6 +16,31 @@ import 'theme.dart';
 import 'ui/home_page.dart';
 import 'ui/sign_in_page.dart';
 
+/// MaterialApp shared by both branches so the theme setup lives in one place.
+class ClasSyncMaterialApp extends StatelessWidget {
+  final String accent;
+  final String themeMode;
+  final Widget home;
+
+  const ClasSyncMaterialApp({
+    super.key,
+    required this.accent,
+    required this.themeMode,
+    required this.home,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'ClasSync',
+      theme: buildTheme(accent),
+      darkTheme: buildTheme(accent, dark: true),
+      themeMode: resolveThemeMode(themeMode),
+      home: home,
+    );
+  }
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -33,10 +58,11 @@ class ClasSyncApp extends StatelessWidget {
       builder: (context, snapshot) {
         final user = snapshot.data;
         if (user == null) {
-          return MaterialApp(
-            title: 'ClasSync',
-            theme: buildTheme('blue'),
-            home: const SignInPage(),
+          // No routine is readable while signed out, so follow the system.
+          return const ClasSyncMaterialApp(
+            accent: 'blue',
+            themeMode: 'system',
+            home: SignInPage(),
           );
         }
         return _SignedInApp(
@@ -103,9 +129,9 @@ class _SignedInAppState extends State<_SignedInApp> {
       stream: _routine,
       builder: (context, snapshot) {
         final routine = snapshot.data ?? Routine.empty();
-        return MaterialApp(
-          title: 'ClasSync',
-          theme: buildTheme(routine.accent),
+        return ClasSyncMaterialApp(
+          accent: routine.accent,
+          themeMode: routine.themeMode,
           home: HomePage(
             repo: widget.repo,
             ctRepo: widget.ctRepo,

@@ -13,13 +13,23 @@ const Map<String, Color> swatches = {
 /// Marks tough periods. Kept apart from [swatches] so it reads the same on any accent.
 const Color toughColor = Color(0xFFFFB74D);
 
-ThemeData buildTheme(String accent) {
+/// Maps the stored preference ("system", "light" or "dark") to a mode.
+ThemeMode resolveThemeMode(String value) => switch (value) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => ThemeMode.system,
+    };
+
+ThemeData buildTheme(String accent, {bool dark = false}) {
   final seed = swatches[accent] ?? swatches['blue']!;
   final small = RoundedRectangleBorder(borderRadius: BorderRadius.circular(12));
   final big = RoundedRectangleBorder(borderRadius: BorderRadius.circular(16));
   return ThemeData(
     useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(seedColor: seed),
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: seed,
+      brightness: dark ? Brightness.dark : Brightness.light,
+    ),
     cardTheme: CardThemeData(shape: big, elevation: 1),
     dialogTheme: DialogThemeData(shape: big),
     filledButtonTheme: FilledButtonThemeData(

@@ -1,5 +1,6 @@
 {
   "accent": "blue",
+  "themeMode": "system",
   "days": ["Sun", "Mon", "Tue", "Wed"],
   "periods": [
     {"start": "09:30", "end": "10:20"},

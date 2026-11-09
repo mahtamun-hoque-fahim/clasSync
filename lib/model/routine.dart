@@ -11,6 +11,8 @@ const _validAccents = {
   'purple',
 };
 
+const _validThemeModes = {'system', 'light', 'dark'};
+
 final _timePattern = RegExp(r'^([01]\d|2[0-3]):[0-5]\d$');
 
 class Period {
@@ -61,6 +63,9 @@ class ClassCell {
 
 class Routine {
   final String accent;
+
+  /// "system", "light" or "dark"; see [_validThemeModes].
+  final String themeMode;
   final List<String> days;
   final List<Period> periods;
   final Map<String, String> teachers;
@@ -68,6 +73,7 @@ class Routine {
 
   const Routine({
     required this.accent,
+    this.themeMode = 'system',
     required this.days,
     required this.periods,
     required this.teachers,
@@ -88,6 +94,7 @@ class Routine {
 
   Routine copyWith({
     String? accent,
+    String? themeMode,
     List<String>? days,
     List<Period>? periods,
     Map<String, String>? teachers,
@@ -95,6 +102,7 @@ class Routine {
   }) =>
       Routine(
         accent: accent ?? this.accent,
+        themeMode: themeMode ?? this.themeMode,
         days: days ?? this.days,
         periods: periods ?? this.periods,
         teachers: teachers ?? this.teachers,
@@ -138,6 +146,7 @@ class Routine {
 
   Map<String, dynamic> toJson() => {
         'accent': accent,
+        'themeMode': themeMode,
         'days': days,
         'periods': periods.map((p) => p.toJson()).toList(),
         'teachers': teachers,
@@ -257,9 +266,13 @@ class Routine {
     if (errors.isNotEmpty) return (null, errors);
 
     final accent = json['accent'];
+    final themeMode = json['themeMode'];
     return (
       Routine(
         accent: _validAccents.contains(accent) ? accent as String : 'blue',
+        themeMode: _validThemeModes.contains(themeMode)
+            ? themeMode as String
+            : 'system',
         days: days,
         periods: periods,
         teachers: teachers,

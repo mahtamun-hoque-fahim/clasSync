@@ -30,6 +30,19 @@ void main() {
     );
   });
 
+  test('dark theme is dark and differs from light', () {
+    final dark = buildTheme('blue', dark: true);
+    expect(dark.colorScheme.brightness, Brightness.dark);
+    expect(dark.colorScheme.surface, isNot(buildTheme('blue').colorScheme.surface));
+  });
+
+  test('resolveThemeMode maps the stored values', () {
+    expect(resolveThemeMode('system'), ThemeMode.system);
+    expect(resolveThemeMode('light'), ThemeMode.light);
+    expect(resolveThemeMode('dark'), ThemeMode.dark);
+    expect(resolveThemeMode('nope'), ThemeMode.system);
+  });
+
   test('tough color is not a swatch', () {
     expect(swatches.values, isNot(contains(toughColor)));
   });

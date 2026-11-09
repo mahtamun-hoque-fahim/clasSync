@@ -243,6 +243,29 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                 ],
               ),
+              _heading(context, 'Theme'),
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(
+                    value: 'system',
+                    label: Text('System'),
+                    icon: Icon(Icons.brightness_auto),
+                  ),
+                  ButtonSegment(
+                    value: 'light',
+                    label: Text('Light'),
+                    icon: Icon(Icons.light_mode_outlined),
+                  ),
+                  ButtonSegment(
+                    value: 'dark',
+                    label: Text('Dark'),
+                    icon: Icon(Icons.dark_mode_outlined),
+                  ),
+                ],
+                selected: {r.themeMode},
+                onSelectionChanged: (selection) =>
+                    _save(r.copyWith(themeMode: selection.first)),
+              ),
               _heading(context, 'Class days'),
               Wrap(
                 spacing: 8,

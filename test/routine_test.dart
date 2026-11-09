@@ -67,6 +67,25 @@ void main() {
     expect(routine!.accent, 'blue');
   });
 
+  test('missing themeMode defaults to system', () {
+    final json = fixture()..remove('themeMode');
+    expect(Routine.parse(json).$1!.themeMode, 'system');
+  });
+
+  test('unknown themeMode becomes system', () {
+    final json = fixture()..['themeMode'] = 'midnight';
+    final (routine, errors) = Routine.parse(json);
+    expect(errors, isEmpty);
+    expect(routine!.themeMode, 'system');
+  });
+
+  test('themeMode round trips', () {
+    final json = fixture()..['themeMode'] = 'dark';
+    final r = Routine.parse(json).$1!;
+    expect(r.themeMode, 'dark');
+    expect(Routine.parse(r.toJson()).$1!.themeMode, 'dark');
+  });
+
   group('invalid file returns errors', () {
     test('unknown day', () => expectInvalid((j) => j['days'] = ['Funday']));
     test('duplicate day', () => expectInvalid((j) => j['days'] = ['Sun', 'Sun']));
@@ -162,5 +181,6 @@ void main() {
     expect(r.days, isEmpty);
     expect(r.periods, isEmpty);
     expect(r.accent, 'blue');
+    expect(r.themeMode, 'system');
   });
 }

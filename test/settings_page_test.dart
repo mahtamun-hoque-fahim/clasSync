@@ -40,6 +40,16 @@ void main() {
     expect(repo.saved!.accent, 'teal');
   });
 
+  testWidgets('tapping Dark saves the theme mode', (tester) async {
+    final repo = await pump(tester, routine);
+    await tester.tap(find.text('Dark'));
+    await tester.pump();
+    expect(repo.saved!.themeMode, 'dark');
+    await tester.tap(find.text('System'));
+    await tester.pump();
+    expect(repo.saved!.themeMode, 'system');
+  });
+
   testWidgets('valid import replaces the routine after confirming',
       (tester) async {
     final repo = await pump(tester, Routine.empty());
