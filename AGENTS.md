@@ -35,6 +35,7 @@ Execute automatically at the start of every session, before the first commit —
 ## Conventions & Non-Negotiables
 
 - No emojis anywhere in code or UI — Material icons or inline SVG only
+- One concern per commit. Every small change gets its own commit with a `type(scope): summary` message; never mix a fix, a feature and a doc update in one commit, and never batch unrelated edits because they were finished at the same time.
 - The notification small icon is passed as a **bare** drawable name: `AndroidInitializationSettings('ic_status')`. `flutter_local_notifications` 22.x resolves it with `getIdentifier(name, "drawable", pkg)` and throws `invalid_icon` on any `@drawable/` or `@mipmap/` prefix.
 - Any drawable referenced only from a Dart string must be pinned in `android/app/src/main/res/raw/keep.xml` with `tools:keep`. Flutter release builds enable `shrinkResources`, which cannot see Dart-only references and silently drops them — debug builds keep working, so the breakage only shows up in a release APK.
 - `AlertScheduler.init()` runs before `runApp()`. It must never throw; a failure there means a blank screen instead of an error.
