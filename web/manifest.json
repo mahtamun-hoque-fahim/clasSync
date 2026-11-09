@@ -1,11 +1,11 @@
 {
-    "name": "classync",
-    "short_name": "classync",
+    "name": "ClasSync",
+    "short_name": "ClasSync",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFFFFF",
+    "theme_color": "#006A60",
+    "description": "Your class timetable, with a silent lock-screen alert before each class and gap.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
