@@ -54,7 +54,13 @@ class RouterActivity : Activity() {
                 addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
             }
         } else {
-            Intent(this, MainActivity::class.java)
+            Intent(this, MainActivity::class.java).apply {
+                // flutter run passes its launch flags to the launcher activity as
+                // extras (--ez enable-dart-profiling and friends) and
+                // FlutterActivity reads them from its own intent, so they have to
+                // survive this hop or debug runs lose them.
+                intent?.extras?.let { putExtras(it) }
+            }
         }
         // MainActivity owns its own task, so it must be started as one.
         next.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
