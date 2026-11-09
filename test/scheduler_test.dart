@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:classync/alerts/build_alerts.dart';
 import 'package:classync/alerts/build_ct_alerts.dart';
 import 'package:classync/alerts/scheduler.dart';
@@ -9,6 +11,7 @@ import 'package:timezone/timezone.dart' as tz;
 class FakePlugin extends Fake implements FlutterLocalNotificationsPlugin {
   final calls = <String>[];
   final scheduled = <int>[];
+  final payloads = <String?>[];
   int? failOnId;
 
   @override
@@ -35,6 +38,7 @@ class FakePlugin extends Fake implements FlutterLocalNotificationsPlugin {
   }) async {
     if (id == failOnId) throw ArgumentError('date must be in the future');
     scheduled.add(id);
+    payloads.add(payload);
   }
 }
 
@@ -83,6 +87,40 @@ void main() {
       final plugin = FakePlugin();
       await AlertScheduler(plugin).clear();
       expect(plugin.calls, ['cancelPending']);
+    });
+
+    test('each alert carries the text the alert screen shows', () async {
+      final plugin = FakePlugin();
+      await AlertScheduler(plugin).reschedule(
+        [
+          const Alert(
+            id: 1,
+            weekday: DateTime.monday,
+            minuteOfDay: 600,
+            title: 'DLD · ASD · 224',
+            body: '09:30',
+          ),
+        ],
+        [
+          CtAlert(
+            id: 1000,
+            when: DateTime.now().add(const Duration(days: 1)),
+            title: 'CT: Physics',
+            body: 'in 1 hour · Mon 10 Nov, 10:00',
+          ),
+        ],
+      );
+      expect(plugin.payloads, [
+        alertPayload('DLD · ASD · 224', '09:30'),
+        alertPayload('CT: Physics', 'in 1 hour · Mon 10 Nov, 10:00'),
+      ]);
+    });
+  });
+
+  test('payload decodes to the two lines the alert screen draws', () {
+    expect(jsonDecode(alertPayload('A · B', '09:30')), {
+      't': 'A · B',
+      'b': '09:30',
     });
   });
 

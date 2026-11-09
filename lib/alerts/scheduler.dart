@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -35,6 +37,11 @@ tz.TZDateTime nextInstance(int weekday, int minuteOfDay, tz.TZDateTime now) {
   }
   return date;
 }
+
+/// The two lines the lock-screen alert screen draws, carried on the
+/// notification so the native activity needs no access to the routine.
+String alertPayload(String title, String body) =>
+    jsonEncode({'t': title, 'b': body});
 
 /// Local notifications on Android. Every method does nothing on web.
 class AlertScheduler {
@@ -122,6 +129,7 @@ class AlertScheduler {
         id: alert.id,
         title: alert.title,
         body: alert.body,
+        payload: alertPayload(alert.title, alert.body),
         when: nextInstance(alert.weekday, alert.minuteOfDay, now),
         details: _details(alert.body, tough: alert.tough),
         mode: mode,
@@ -133,6 +141,7 @@ class AlertScheduler {
         id: alert.id,
         title: alert.title,
         body: alert.body,
+        payload: alertPayload(alert.title, alert.body),
         when: tz.TZDateTime.from(alert.when, tz.local),
         details: _details(alert.body),
         mode: mode,
@@ -145,6 +154,7 @@ class AlertScheduler {
     required int id,
     required String title,
     required String body,
+    required String payload,
     required tz.TZDateTime when,
     required NotificationDetails details,
     required AndroidScheduleMode mode,
@@ -155,6 +165,7 @@ class AlertScheduler {
         id: id,
         title: title,
         body: body,
+        payload: payload,
         scheduledDate: when,
         notificationDetails: details,
         androidScheduleMode: mode,
@@ -180,11 +191,13 @@ class AlertScheduler {
   /// Fires a sample alert in 10 seconds so the user can check it on their phone.
   Future<void> sendTest() async {
     if (kIsWeb) return;
+    const title = 'DLD · ASD · 224';
     const body = '09:30';
     await _plugin.zonedSchedule(
       id: _testAlertId,
-      title: 'DLD · ASD · 224',
+      title: title,
       body: body,
+      payload: alertPayload(title, body),
       scheduledDate: tz.TZDateTime.now(tz.local).add(const Duration(seconds: 10)),
       notificationDetails: _details(body),
       androidScheduleMode: await _mode(),
