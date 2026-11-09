@@ -6,7 +6,7 @@ Weekly class routine for Android and web, with a silent lock-screen alert before
 
 - Updated: 2026-11-09
 - Status: Beta — single user, installed on one phone (Redmi `25078RA3EA`)
-- Works: Google sign-in; routine sync through Firestore; routine and teacher editing; CT (class test) add/edit/delete with custom reminders; CT auto-delete once its time passes; scheduling and delivery of exact alarms; gap-period reminder at 08:00 on class days; settings (accent, class days, reminder offsets, JSON import); newly generated app icon on the launcher; notification small icon; web dashboard build.
+- Works: Google sign-in; routine sync through Firestore; routine and teacher editing; CT (class test) add/edit/delete with custom reminders; CT auto-delete once its time passes; scheduling and delivery of exact alarms; gap-period reminder at 08:00 on class days; settings (accent, theme mode, class days, reminder offsets, JSON import) with switchable System/Light/Dark theme synced in the routine doc; newly generated app icon on the launcher; notification small icon; web dashboard build.
 - In progress: nothing half-built in code.
 - Next: (1) build the dedicated single-line alert screen and make it the `fullScreenIntent` target instead of `MainActivity`; (2) capture the alert on a locked screen once (1) lands, since today it is only visible for about one second.
 - Watch out: the alert currently opens the **whole dashboard** over the lock screen and never closes itself. `fullScreenIntent` targets `MainActivity`, which is declared `showWhenLocked` + `turnScreenOn`, so it draws over the keyguard and stays until Back, Home or screen timeout. `deviceLocked` stays `1` throughout, so nothing is bypassed — but the user sees the full timetable instead of one glanceable line. Do not describe the locked-screen behaviour as finished until this is fixed.
@@ -50,6 +50,10 @@ Execute automatically at the start of every session, before the first commit —
 - `showWhenLocked` + `turnScreenOn` mean the alert activity is visible and interactive while the device is locked. Nothing behind it is exempt from the lock, but anything rendered there can be read without unlocking — keep the alert screen to the minimum class detail.
 
 ## Session Log
+
+### 2026-11-09
+- Did: Shipped a switchable theme — `Routine` gained a `themeMode` field (`system` / `light` / `dark`); missing or unknown values parse to `system`, so old docs and imported JSON keep working. `buildTheme` now builds a seeded dark scheme (`ColorScheme.fromSeed(brightness:)`), and `main.dart` carries `theme` + `darkTheme` + `themeMode` through a shared `ClasSyncMaterialApp`. Settings has a System/Light/Dark segmented button; the preference lives in the routine doc and syncs like accent, and signed-out users follow the system setting.
+- Committed: `feat(theme): switchable system/light/dark theme stored in the routine` (e4f110c). `flutter analyze` clean, all 126 tests pass.
 
 ### 2026-11-08
 - Did: Root-caused why no notification had ever arrived. The app was installed on 1 Nov, before the commit that seeds the routine, so the stored routine was empty and `buildAlerts` produced zero alerts. Permissions and MIUI battery management were never the cause.
