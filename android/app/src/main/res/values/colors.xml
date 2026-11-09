@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Colours for the lock-screen alert. Fixed dark on purpose: it is read at a
+     glance on a dimmed lock screen, whatever accent the dashboard uses. -->
+<resources>
+    <color name="alert_background">#0B1211</color>
+    <color name="alert_title">#F2F7F5</color>
+    <color name="alert_body">#9FB3AE</color>
+    <color name="alert_accent">#35B9A9</color>
+    <color name="alert_hint">#5C716D</color>
+</resources>

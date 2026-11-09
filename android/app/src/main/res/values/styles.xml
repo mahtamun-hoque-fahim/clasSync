@@ -15,4 +15,14 @@
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
+    <!-- The lock-screen alert. Fixed dark on purpose: it is read at a glance on a
+         dimmed screen, whatever theme the dashboard is set to, so it has no
+         values-night variant. -->
+    <style name="AlertTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/alert_background</item>
+        <item name="android:statusBarColor">@color/alert_background</item>
+        <item name="android:navigationBarColor">@color/alert_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
 </resources>
