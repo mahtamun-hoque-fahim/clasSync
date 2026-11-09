@@ -45,6 +45,19 @@ The APK is written to `build/app/outputs/flutter-apk/app-release.apk`.
 
 The release APK is signed with the debug key, which is fine for installing directly. Its SHA-1 and SHA-256 are registered in Firebase, and Google sign-in depends on them. On a new computer, register that computer's debug key or copy `~/.android/debug.keystore` over. Publishing to the Play Store would need a real signing key.
 
+### Changing the icon
+
+Every icon asset is generated from [assets/icon/clasSync-icon.svg](assets/icon/clasSync-icon.svg); do not hand-edit the PNGs. Replace that SVG, then:
+
+```bash
+npm install @resvg/resvg-js pngjs
+node tool/generate_icons.js
+```
+
+That rewrites the Android launcher and adaptive layers, the notification silhouette, the web icons and `assets/icon/icon-1024.png`.
+
+Release builds shrink resources they cannot see referenced from code, so the notification icon `drawable/ic_status` is pinned in `android/app/src/main/res/raw/keep.xml`. Any drawable named only inside Dart needs the same treatment, or it disappears from release APKs while debug keeps working.
+
 ## Firebase
 
 Project: `classync-214da`. Firestore rules are in `firestore.rules`: each user can only read and write their own `routines/{uid}` doc and its `cts` subcollection.
