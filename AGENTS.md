@@ -8,7 +8,7 @@ Weekly class routine for Android and web, with a silent lock-screen alert before
 - Status: Beta — single user, installed on one phone (Redmi `25078RA3EA`)
 - Works: Google sign-in; routine sync through Firestore; routine and teacher editing; CT (class test) add/edit/delete with custom reminders; CT auto-delete once its time passes; scheduling and delivery of exact alarms; gap-period reminder at 08:00 on class days; settings (accent, class days, reminder offsets, JSON import); newly generated app icon on the launcher; notification small icon; web dashboard build.
 - In progress: nothing half-built in code.
-- Next: (1) build the dedicated single-line alert screen and make it the `fullScreenIntent` target instead of `MainActivity`; (2) commit the icon, notification-icon, `keep.xml` and init-hardening work, which is still uncommitted on `feat/classync-app`; (3) capture the alert on a locked screen once (1) lands, since today it is only visible for about one second.
+- Next: (1) build the dedicated single-line alert screen and make it the `fullScreenIntent` target instead of `MainActivity`; (2) capture the alert on a locked screen once (1) lands, since today it is only visible for about one second.
 - Watch out: the alert currently opens the **whole dashboard** over the lock screen and never closes itself. `fullScreenIntent` targets `MainActivity`, which is declared `showWhenLocked` + `turnScreenOn`, so it draws over the keyguard and stays until Back, Home or screen timeout. `deviceLocked` stays `1` throughout, so nothing is bypassed — but the user sees the full timetable instead of one glanceable line. Do not describe the locked-screen behaviour as finished until this is fixed.
 
 ## Git Identity (Session Start — run before any commit, every session)
