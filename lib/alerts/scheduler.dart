@@ -51,26 +51,32 @@ class AlertScheduler {
 
   Future<void> init() async {
     if (kIsWeb) return;
-    tzdata.initializeTimeZones();
-    final zone = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(zone.identifier));
-    await _plugin.initialize(
-      settings: const InitializationSettings(
-        // Bare resource name: the plugin resolves it with
-        // getIdentifier(name, "drawable", package) and rejects any prefix.
-        android: AndroidInitializationSettings('ic_status'),
-      ),
-    );
-    await _android?.createNotificationChannel(
-      const AndroidNotificationChannel(
-        _channelId,
-        'Class alerts',
-        description: 'Next class and gap period reminders',
-        importance: Importance.max,
-        playSound: false,
-        enableVibration: true,
-      ),
-    );
+    // Called before runApp(), so nothing in here may throw: a bad resource or an
+    // unsupported platform should degrade alerts, not leave a blank screen.
+    try {
+      tzdata.initializeTimeZones();
+      final zone = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(zone.identifier));
+      await _plugin.initialize(
+        settings: const InitializationSettings(
+          // Bare resource name: the plugin resolves it with
+          // getIdentifier(name, "drawable", package) and rejects any prefix.
+          android: AndroidInitializationSettings('ic_status'),
+        ),
+      );
+      await _android?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _channelId,
+          'Class alerts',
+          description: 'Next class and gap period reminders',
+          importance: Importance.max,
+          playSound: false,
+          enableVibration: true,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Could not initialise notifications: $e');
+    }
   }
 
   NotificationDetails _details(String body, {bool tough = false}) =>
