@@ -56,7 +56,9 @@ class AlertScheduler {
     tz.setLocalLocation(tz.getLocation(zone.identifier));
     await _plugin.initialize(
       settings: const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        // Bare resource name: the plugin resolves it with
+        // getIdentifier(name, "drawable", package) and rejects any prefix.
+        android: AndroidInitializationSettings('ic_status'),
       ),
     );
     await _android?.createNotificationChannel(
