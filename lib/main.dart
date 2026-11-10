@@ -15,6 +15,7 @@ import 'model/routine.dart';
 import 'theme.dart';
 import 'ui/home_page.dart';
 import 'ui/sign_in_page.dart';
+import 'widget/widget_sync.dart';
 
 /// MaterialApp shared by both branches so the theme setup lives in one place.
 class ClasSyncMaterialApp extends StatelessWidget {
@@ -99,7 +100,12 @@ class _SignedInAppState extends State<_SignedInApp> {
     super.initState();
     _lifecycle;
     _routineAlerts = _routine.listen(
-      (r) => _sync.routine = r,
+      (r) {
+        _sync.routine = r;
+        // Fire and forget: the widget must never delay alert sync, and a
+        // missing widget is invisible to the user.
+        WidgetSync.push(r);
+      },
       onError: _logError,
     );
     _ctAlerts = widget.ctRepo.watch().listen(
@@ -112,6 +118,7 @@ class _SignedInAppState extends State<_SignedInApp> {
 
   Future<void> _signOut() async {
     await alertScheduler.clear();
+    await WidgetSync.clear();
     await signOutOfGoogle();
   }
 

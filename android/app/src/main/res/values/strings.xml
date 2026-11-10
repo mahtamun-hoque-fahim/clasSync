@@ -2,4 +2,5 @@
 <resources>
     <string name="alert_dismiss_hint">Tap to dismiss</string>
     <string name="alert_fallback_title">Class alert</string>
+    <string name="widget_description">The class running now and the next one</string>
 </resources>

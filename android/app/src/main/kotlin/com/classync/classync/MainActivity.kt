@@ -50,5 +50,22 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+        // Home-screen widget bridge. Dart pushes a week snapshot as JSON
+        // (lib/widget/widget_sync.dart); the provider draws from it and keeps
+        // itself fresh with its own alarms, without the Flutter process.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "classync/widget")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "push" -> {
+                        ClassWidgetProvider.push(this, call.arguments as String)
+                        result.success(null)
+                    }
+                    "clear" -> {
+                        ClassWidgetProvider.clear(this)
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
     }
 }

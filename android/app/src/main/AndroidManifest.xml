@@ -62,6 +62,23 @@
                 <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
             </intent-filter>
         </receiver>
+        <!-- The home-screen widget. Exported by necessity: the launcher crosses
+             app boundaries to deliver APPWIDGET_UPDATE. Its own exact-alarm
+             broadcast keeps it fresh between Flutter pushes. -->
+        <receiver
+            android:exported="true"
+            android:name=".ClassWidgetProvider"
+            android:label="ClasSync">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="com.classync.classync.WIDGET_REFRESH"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/class_widget_info"/>
+        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
