@@ -175,7 +175,8 @@ class _HomePageState extends State<HomePage> {
           if (r == null) {
             return const Center(child: CircularProgressIndicator());
           }
-          final t = today(r, DateTime.now());
+          final now = DateTime.now();
+          final t = today(r, now);
           return ListView(
             padding: const EdgeInsets.all(12),
             children: [
@@ -196,25 +197,61 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 for (final (period, cell) in t.periods)
-                  ListTile(
-                    leading: Text('${period.start}\n${period.end}'),
-                    title: Text(cell?.course ?? 'Gap'),
-                    subtitle: cell == null
-                        ? null
-                        : Text(
-                            [
-                              if (cell.teacher.isNotEmpty) cell.teacher,
-                              cell.room,
-                            ].join(' · '),
-                          ),
-                    trailing: cell?.tough == true
-                        ? const Icon(Icons.circle, color: toughColor, size: 14)
-                        : null,
+                  _TodayRow(
+                    period: period,
+                    cell: cell,
+                    live: isOnNow(period, cell, now),
                   ),
               ],
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// One row of today's timetable. The class that is running right now is filled
+/// with the accent container, so the current slot stands out from the rest.
+class _TodayRow extends StatelessWidget {
+  final Period period;
+  final ClassCell? cell;
+  final bool live;
+
+  const _TodayRow({
+    required this.period,
+    required this.cell,
+    required this.live,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final on = theme.colorScheme.onPrimaryContainer;
+    final cell = this.cell;
+    return Material(
+      color: live ? theme.colorScheme.primaryContainer : Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        textColor: live ? on : null,
+        iconColor: live ? on : null,
+        leading: Text(
+          '${period.start}\n${period.end}',
+          style: live ? TextStyle(color: on.withValues(alpha: 0.8)) : null,
+        ),
+        title: Text(cell?.course ?? 'Gap'),
+        subtitle: cell == null
+            ? null
+            : Text(
+                [
+                  if (cell.teacher.isNotEmpty) cell.teacher,
+                  cell.room,
+                ].join(' · '),
+              ),
+        trailing: cell?.tough == true
+            ? const Icon(Icons.circle, color: toughColor, size: 14)
+            : null,
       ),
     );
   }
