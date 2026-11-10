@@ -38,6 +38,7 @@ Execute automatically at the start of every session, before the first commit —
 
 - No emojis anywhere in code or UI — Material icons or inline SVG only
 - One concern per commit. Every small change gets its own commit with a `type(scope): summary` message; never mix a fix, a feature and a doc update in one commit, and never batch unrelated edits because they were finished at the same time.
+- Every Session Log entry starts with a `- By:` line naming the agent that did the work (`DeepSeek V4.1 Flash Free (OpenCode)`, and so on). Several agents work this repo, often at the same time, so an unattributed entry is useless when two sessions touch the same files.
 - The notification small icon is passed as a **bare** drawable name: `AndroidInitializationSettings('ic_status')`. `flutter_local_notifications` 22.x resolves it with `getIdentifier(name, "drawable", pkg)` and throws `invalid_icon` on any `@drawable/` or `@mipmap/` prefix.
 - Any drawable referenced only from a Dart string must be pinned in `android/app/src/main/res/raw/keep.xml` with `tools:keep`. Flutter release builds enable `shrinkResources`, which cannot see Dart-only references and silently drops them — debug builds keep working, so the breakage only shows up in a release APK.
 - `AlertScheduler.init()` runs before `runApp()`. It must never throw; a failure there means a blank screen instead of an error.
@@ -54,6 +55,7 @@ Execute automatically at the start of every session, before the first commit —
 ## Session Log
 
 ### 2026-11-10
+- By: DeepSeek V4.1 Flash Free (OpenCode)
 - Did: Built the dedicated alert screen as **native Kotlin**, not a Flutter route. `flutter_local_notifications` resolves its pending intent with `getLaunchIntentForPackage()`, and a full-screen intent waits for the first frame, so a Flutter screen would boot the engine with the dashboard visible underneath. `AlertActivity` renders one dark line (`COURSE · TEACHER · ROOM`) with the time, over a teal rule, and self-closes after 20 s.
 - Did: Verified it end to end on the real locked screen. A scheduled CT alert woke the display, put `topResumedActivity` on `AlertActivity` in its own task (t4759) with `isKeyguardShowing=true`, `mKeyguardOccluded=true`, `deviceLocked=1` and `mWakefulness=Awake`; the screen rendered correctly, auto-dismissed at 20 s back to the lock screen with the notification preserved, and a tap dismissed it early.
 - Did: Added `RouterActivity` to hold the `MAIN`/`LAUNCHER` filter and forward `SELECT_NOTIFICATION` to `AlertActivity`, everything else to `MainActivity`. `MainActivity` lost its launcher filter and its `showWhenLocked`/`turnScreenOn`, so the dashboard can no longer draw over the keyguard even by accident. Confirmed with `aapt2 dump badging` that the app still has a launchable activity.
