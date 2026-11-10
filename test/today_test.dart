@@ -71,4 +71,27 @@ void main() {
     expect(t.now, isNull);
     expect(t.next, isNull);
   });
+
+  group('isOnNow', () {
+    final r = routine();
+    final first = r.periods[0]; // 09:30-10:20
+    final sundayDm = r.row('Sun')[0];
+
+    test('is true inside the period', () {
+      expect(isOnNow(first, sundayDm, DateTime(2026, 11, 1, 9, 45)), isTrue);
+    });
+
+    test('is false from the end minute onwards', () {
+      expect(isOnNow(first, sundayDm, DateTime(2026, 11, 1, 10, 20)), isFalse);
+      expect(isOnNow(first, sundayDm, DateTime(2026, 11, 1, 10, 21)), isFalse);
+    });
+
+    test('is false before the start minute', () {
+      expect(isOnNow(first, sundayDm, DateTime(2026, 11, 1, 9, 29)), isFalse);
+    });
+
+    test('is false for a gap period', () {
+      expect(isOnNow(first, null, DateTime(2026, 11, 1, 9, 45)), isFalse);
+    });
+  });
 }

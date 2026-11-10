@@ -11,6 +11,15 @@ class Slot {
   const Slot(this.period, this.cell);
 }
 
+int _minuteOf(DateTime time) => time.hour * 60 + time.minute;
+
+bool _covers(Period period, int minute) =>
+    period.startMinute <= minute && minute < period.endMinute;
+
+/// True when [period] is running at [time] and a class is actually in it.
+bool isOnNow(Period period, ClassCell? cell, DateTime time) =>
+    cell != null && _covers(period, _minuteOf(time));
+
 class Today {
   final bool isClassDay;
   final Slot? now, next;
@@ -30,7 +39,7 @@ Today today(Routine r, DateTime time) {
     return const Today(isClassDay: false, now: null, next: null, periods: []);
   }
 
-  final minute = time.hour * 60 + time.minute;
+  final minute = _minuteOf(time);
   final row = r.row(day);
   Slot? now, next;
   // True while walking the rest of a double period that is on now.
@@ -40,7 +49,7 @@ Today today(Routine r, DateTime time) {
     final period = r.periods[i];
     if (cell == null) {
       inNowBlock = false;
-    } else if (period.startMinute <= minute && minute < period.endMinute) {
+    } else if (_covers(period, minute)) {
       now = Slot(period, cell);
       inNowBlock = true;
     } else if (period.startMinute > minute) {
