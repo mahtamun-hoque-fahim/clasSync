@@ -4,12 +4,14 @@ Weekly class routine for Android and web, with a silent lock-screen alert before
 
 ## Current State
 
-- Updated: 2026-11-09
+- Updated: 2026-11-10
 - Status: Beta — single user, installed on one phone (Redmi `25078RA3EA`)
-- Works: Google sign-in; routine sync through Firestore; routine and teacher editing; CT (class test) add/edit/delete with custom reminders; CT auto-delete once its time passes; scheduling and delivery of exact alarms; gap-period reminder at 08:00 on class days; settings (accent, theme mode, class days, reminder offsets, JSON import) with switchable System/Light/Dark theme synced in the routine doc; newly generated app icon on the launcher; notification small icon; web dashboard build.
-- In progress: nothing half-built in code.
-- Next: (1) build the dedicated single-line alert screen and make it the `fullScreenIntent` target instead of `MainActivity`; (2) capture the alert on a locked screen once (1) lands, since today it is only visible for about one second.
-- Watch out: the alert currently opens the **whole dashboard** over the lock screen and never closes itself. `fullScreenIntent` targets `MainActivity`, which is declared `showWhenLocked` + `turnScreenOn`, so it draws over the keyguard and stays until Back, Home or screen timeout. `deviceLocked` stays `1` throughout, so nothing is bypassed — but the user sees the full timetable instead of one glanceable line. Do not describe the locked-screen behaviour as finished until this is fixed.
+- Works: Google sign-in; routine sync through Firestore; routine and teacher editing; CT (class test) add/edit/delete with custom reminders; CT auto-delete once its time passes; scheduling and delivery of exact alarms; a one-line **lock-screen alert** that wakes the screen, sits over the keyguard and closes itself after 20 s; the class running right now filled with the accent in today's list; gap-period reminder at 08:00 on class days; settings (accent, theme mode, class days, reminder offsets, JSON import) with switchable System/Light/Dark theme synced in the routine doc; newly generated app icon on the launcher; notification small icon; web dashboard build.
+- In progress: a home-screen widget (`ClassWidgetProvider`, `lib/widget/`) is uncommitted in the working tree; it belongs to another session and is not described here until it lands.
+- Next: (1) re-run the release APK build and confirm the alert screen there, since everything so far was verified with a debug build; (2) decide whether the alert should also cancel the notification instead of leaving it in the shade.
+- Watch out: `flutter_local_notifications` builds its pending intent from `getLaunchIntentForPackage()`, so **`RouterActivity` must keep the `MAIN`/`LAUNCHER` filter**. Move that filter back to `MainActivity` and every alert silently opens the dashboard again with no error anywhere. `AlertActivity` is `exported="false"`, so only that router can start it.
+- Watch out: firing the test alert twice in a row without clearing the notification does **not** re-trigger the full-screen intent. The second post has the same id and is treated as an update, so the screen stays off and it looks as if the alert is broken. Force-stop the app (or dismiss the notification) between test runs.
+
 
 ## Git Identity (Session Start — run before any commit, every session)
 
@@ -50,6 +52,19 @@ Execute automatically at the start of every session, before the first commit —
 - `showWhenLocked` + `turnScreenOn` mean the alert activity is visible and interactive while the device is locked. Nothing behind it is exempt from the lock, but anything rendered there can be read without unlocking — keep the alert screen to the minimum class detail.
 
 ## Session Log
+
+### 2026-11-10
+- Did: Built the dedicated alert screen as **native Kotlin**, not a Flutter route. `flutter_local_notifications` resolves its pending intent with `getLaunchIntentForPackage()`, and a full-screen intent waits for the first frame, so a Flutter screen would boot the engine with the dashboard visible underneath. `AlertActivity` renders one dark line (`COURSE · TEACHER · ROOM`) with the time, over a teal rule, and self-closes after 20 s.
+- Did: Verified it end to end on the real locked screen. A scheduled CT alert woke the display, put `topResumedActivity` on `AlertActivity` in its own task (t4759) with `isKeyguardShowing=true`, `mKeyguardOccluded=true`, `deviceLocked=1` and `mWakefulness=Awake`; the screen rendered correctly, auto-dismissed at 20 s back to the lock screen with the notification preserved, and a tap dismissed it early.
+- Did: Added `RouterActivity` to hold the `MAIN`/`LAUNCHER` filter and forward `SELECT_NOTIFICATION` to `AlertActivity`, everything else to `MainActivity`. `MainActivity` lost its launcher filter and its `showWhenLocked`/`turnScreenOn`, so the dashboard can no longer draw over the keyguard even by accident. Confirmed with `aapt2 dump badging` that the app still has a launchable activity.
+- Did: Caught a real bug with that same `aapt2` check. `RouterActivity` was left self-closing with no `intent-filter`, which removed the app's launcher entry entirely — the APK would have installed with no way to open it.
+- Did: Carried the alert text in the notification `payload` as JSON. The single pending intent serves both `contentIntent` and `fullScreenIntent`, so the payload is the only way the activity learns what to show.
+- Did: Copied `intent.extras` onto the forwarded dashboard intent. `flutter run` passes `--ez enable-dart-profiling` and friends to the launcher activity and `FlutterActivity` reads them from its own intent, so the router hop would have silently dropped them.
+- Did: Filled the class running right now with the accent (`primaryContainer` / `onPrimaryContainer`) instead of a hardcoded swatch, so it follows the chosen accent and stays legible in both themes. Added `isOnNow()` to the model so a double period lights up both of its rows, and refactored `today()`'s `start <= minute < end` test into one shared helper.
+- Decided: Kept `MainActivity` `exported="true"` with no filter rather than tightening it, to avoid breaking `adb shell am start` tooling while that path is untestable.
+- Learned: Firing the test alert twice without clearing the notification does **not** re-trigger the full-screen intent — the second post has the same id and is an update, so the screen stays off and the alert looks broken. Cost several false negatives; force-stop between runs.
+- Learned: The display times out in seconds on this phone, which poisons every screenshot. `adb shell svc power stayon true` plus `screen_off_timeout 1800000` is required. `adb shell date` cannot set the clock (no root), so the live-class highlight was checked with a temporary golden render instead.
+- Committed: `6e426bc` payload, `4a166cf` alert screen, `d99d959` router, `4e8d67f` keyguard fix, `276a767` extras fix, `4b014b3` `isOnNow`, `9f8f27d` accent highlight. `flutter analyze` clean, all 140 tests pass.
 
 ### 2026-11-09
 - Did: Shipped a switchable theme — `Routine` gained a `themeMode` field (`system` / `light` / `dark`); missing or unknown values parse to `system`, so old docs and imported JSON keep working. `buildTheme` now builds a seeded dark scheme (`ColorScheme.fromSeed(brightness:)`), and `main.dart` carries `theme` + `darkTheme` + `themeMode` through a shared `ClasSyncMaterialApp`. Settings has a System/Light/Dark segmented button; the preference lives in the routine doc and syncs like accent, and signed-out users follow the system setting.
