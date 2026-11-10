@@ -58,6 +58,9 @@ Map<String, dynamic> widgetSnapshot(Routine r) {
     // lighter version, computed here because Dart owns the color utilities.
     'accent': _hex(accent),
     'accentOnDark': _hex(Color.lerp(accent, const Color(0xFFFFFFFF), 0.45)!),
+    // The widget mirrors the app's System / Light / Dark choice too: the
+    // provider falls back to the system setting only when this is "system".
+    'theme': r.themeMode,
     'days': {
       for (final day in validDays)
         day: [for (final s in widgetSlots(r, day)) s.toJson()],

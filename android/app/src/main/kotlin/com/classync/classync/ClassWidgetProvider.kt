@@ -8,15 +8,21 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Build
+import android.text.Spannable
+import android.text.SpannableStringBuilder
+import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
 import android.widget.RemoteViews
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Calendar
 
 /**
- * The 250dp x 180dp home-screen widget: the class running now and the next one.
+ * The full-width, 2-row home-screen widget: the class running now and the next.
  *
  * Dart owns the data (lib/widget/widget_sync.dart): it serializes the whole
  * week into one JSON snapshot and hands it over the `classync/widget` channel,
@@ -79,9 +85,9 @@ class ClassWidgetProvider : AppWidgetProvider() {
         private fun refresh(context: Context) {
             val ids = widgetIds(context)
             if (ids.isEmpty()) return
-            AppWidgetManager.getInstance(context)
-                .updateAppWidget(ids, buildViews(context, prefs(context).getString(SNAPSHOT_KEY, null)))
-            scheduleNext(context, prefs(context).getString(SNAPSHOT_KEY, null))
+            val snapshot = prefs(context).getString(SNAPSHOT_KEY, null)
+            AppWidgetManager.getInstance(context).updateAppWidget(ids, buildViews(context, snapshot))
+            scheduleNext(context, snapshot)
         }
 
         // ---- Rendering ----
@@ -106,7 +112,7 @@ class ClassWidgetProvider : AppWidgetProvider() {
                 val o = raw.optJSONObject(i) ?: continue
                 val start = o.optString("s")
                 val end = o.optString("e")
-                // Dart validated both as HH:mm and start < end.
+                // Dart validated both as HH:mm with start < end.
                 out.add(
                     Slot(
                         start, minutes(start),
@@ -118,99 +124,84 @@ class ClassWidgetProvider : AppWidgetProvider() {
             return out
         }
 
-        private fun detail(teacher: String, room: String, time: String): String {
-            val parts = listOf(teacher, room).filter { it.isNotBlank() }
-            return (parts.joinToString(" · ") + " · " + time).trim(' ', '·')
+        /** "NOW" in the accent + the rest dimmer, in one line. */
+        private fun labeled(label: String, rest: String, accent: Int, dim: Int): CharSequence {
+            val sb = SpannableStringBuilder(label)
+            sb.setSpan(ForegroundColorSpan(accent), 0, label.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            sb.setSpan(StyleSpan(Typeface.BOLD), 0, label.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            if (rest.isNotEmpty()) {
+                sb.append("  ").append(rest)
+                sb.setSpan(ForegroundColorSpan(dim), label.length, sb.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+            return sb
         }
 
         private fun buildViews(context: Context, snapshot: String?): RemoteViews {
             val rv = RemoteViews(context.packageName, R.layout.class_widget)
-            val night =
-                (context.resources.configuration.uiMode and
-                        android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
-                        android.content.res.Configuration.UI_MODE_NIGHT_YES
-            rv.setInt(
-                R.id.widgetRoot, "setBackgroundResource",
-                if (night) R.drawable.widget_bg_night else R.drawable.widget_bg,
-            )
-            val onBg = context.getColor(R.color.widget_on_bg)
-            val dim = context.getColor(R.color.widget_dim)
+
+            // Resolve every color through the launcher's configuration first,
+            // then let an explicit theme override from the app win: the widget
+            // mirrors the in-app System / Light / Dark choice.
+            val configNight =
+                (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+                        Configuration.UI_MODE_NIGHT_YES
 
             // Parse fails leave the placeholder text; editing the routine in the
             // app overwrites the snapshot shortly afterwards anyway.
-            val days = runCatching {
-                snapshot?.let { JSONObject(it).optJSONObject("days") }
-            }.getOrNull()
-
-            var accent = if (night) 0xFF7ED9CE.toInt() else Color.parseColor("#006A60")
-            val slots: List<Slot>
-            if (days != null) {
-                val raw = JSONObject(snapshot!!).optString("accent")
-                accent = runCatching { Color.parseColor(raw) }.getOrDefault(accent)
-                val darkRaw = JSONObject(snapshot).optString("accentOnDark")
-                if (night && darkRaw.isNotEmpty()) {
-                    accent = runCatching { Color.parseColor(darkRaw) }.getOrDefault(accent)
+            val root = runCatching { snapshot?.let(::JSONObject) }.getOrNull()
+            val days = root?.optJSONObject("days")
+            val accent = root?.let { r ->
+                val isDark = when (r.optString("theme", "system")) {
+                    "light" -> false
+                    "dark" -> true
+                    else -> configNight
                 }
-                slots = parseDay(days.optJSONArray(WEEK_DAY[today().get(Calendar.DAY_OF_WEEK)]))
-            } else {
-                slots = emptyList()
-            }
+                val hex = if (isDark) r.optString("accentOnDark") else r.optString("accent")
+                runCatching { Color.parseColor(hex) }.getOrNull()
+                    ?: context.getColor(R.color.widget_accent)
+            } ?: context.getColor(R.color.widget_accent)
+            val onBg = context.getColor(R.color.widget_on_bg)
+            val dim = context.getColor(R.color.widget_dim)
 
-            val now = Calendar.getInstance()
-            val minute = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
-            val running = slots.firstOrNull { it.startMinute <= minute && minute < it.endMinute }
-            val next = slots.firstOrNull { it.startMinute > minute }
-
-            if (days == null) {
-                rv.setTextViewText(R.id.nowLabel, "CLASYNC")
+            if (root == null || days == null) {
+                rv.setTextViewText(R.id.nowLine, labeled("CLASYNC", "", dim, dim))
                 rv.setTextViewText(R.id.nowMain, "Open ClasSync")
-                rv.setTextViewText(R.id.nowSub, "Your routine has not reached the widget yet")
-                rv.setTextColor(R.id.nowLabel, dim)
                 rv.setTextColor(R.id.nowMain, onBg)
-                rv.setTextColor(R.id.nowSub, dim)
-                rv.setViewVisibility(R.id.nextRow, android.view.View.GONE)
-                return rv
-            }
-
-            if (running != null) {
-                rv.setTextViewText(R.id.nowLabel, "NOW")
-                rv.setTextViewText(R.id.nowMain, running.course)
-                rv.setTextViewText(
-                    R.id.nowSub,
-                    detail(running.teacher, running.room, "${running.start}–${running.end}"),
-                )
-                rv.setTextColor(R.id.nowLabel, accent)
-                rv.setTextColor(R.id.nowMain, onBg)
-                rv.setTextColor(R.id.nowSub, dim)
+                rv.setTextViewText(R.id.nextLine, "")
+                rv.setViewVisibility(R.id.nextLine, android.view.View.GONE)
             } else {
-                val headline = when {
-                    next != null -> "Next class"
-                    slots.isEmpty() -> "No classes today"
-                    else -> "No classes left today"
+                val now = Calendar.getInstance()
+                val minute = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
+                val slots = parseDay(days.optJSONArray(WEEK_DAY[now.get(Calendar.DAY_OF_WEEK)]))
+                val running = slots.firstOrNull { it.startMinute <= minute && minute < it.endMinute }
+                val next = slots.firstOrNull { it.startMinute > minute }
+
+                if (running != null) {
+                    rv.setTextViewText(R.id.nowLine, labeled("NOW", "${running.start}–${running.end}", accent, dim))
+                    rv.setTextViewText(R.id.nowMain, running.course)
+                    rv.setTextColor(R.id.nowMain, onBg)
+                    if (next != null) {
+                        val detail = listOf(next.course, next.room, next.start)
+                            .filter { it.isNotBlank() }.joinToString(" · ")
+                        rv.setTextViewText(R.id.nextLine, labeled("NEXT", detail, accent, dim))
+                        rv.setViewVisibility(R.id.nextLine, android.view.View.VISIBLE)
+                    } else {
+                        rv.setViewVisibility(R.id.nextLine, android.view.View.GONE)
+                    }
+                } else if (next != null) {
+                    rv.setTextViewText(R.id.nowLine, labeled("NEXT", next.start, accent, dim))
+                    rv.setTextViewText(R.id.nowMain, next.course)
+                    rv.setTextColor(R.id.nowMain, onBg)
+                    rv.setTextViewText(R.id.nextLine, "")
+                    rv.setViewVisibility(R.id.nextLine, android.view.View.GONE)
+                } else {
+                    val headline = if (slots.isEmpty()) "No classes today" else "No classes left today"
+                    rv.setTextViewText(R.id.nowLine, "")
+                    rv.setTextViewText(R.id.nowMain, headline)
+                    rv.setTextColor(R.id.nowMain, onBg)
+                    rv.setTextViewText(R.id.nextLine, "")
+                    rv.setViewVisibility(R.id.nextLine, android.view.View.GONE)
                 }
-                rv.setTextViewText(R.id.nowLabel, "")
-                rv.setTextViewText(R.id.nowMain, headline)
-                if (next != null) rv.setTextViewText(
-                    R.id.nowSub,
-                    "${next.course} at ${next.start} · ${next.room}",
-                ) else rv.setTextViewText(R.id.nowSub, "")
-                rv.setTextColor(R.id.nowMain, onBg)
-                rv.setTextColor(R.id.nowSub, dim)
-            }
-
-            if (next != null) {
-                rv.setViewVisibility(R.id.nextRow, android.view.View.VISIBLE)
-                rv.setTextViewText(R.id.nextLabel, "NEXT")
-                rv.setTextViewText(R.id.nextMain, next.course)
-                rv.setTextViewText(
-                    R.id.nextSub,
-                    detail(next.teacher, next.room, "${next.start}–${next.end}"),
-                )
-                rv.setTextColor(R.id.nextLabel, accent)
-                rv.setTextColor(R.id.nextMain, onBg)
-                rv.setTextColor(R.id.nextSub, dim)
-            } else {
-                rv.setViewVisibility(R.id.nextRow, android.view.View.GONE)
             }
 
             // Tapping the widget opens the dashboard (RouterActivity forwards on).
@@ -227,8 +218,6 @@ class ClassWidgetProvider : AppWidgetProvider() {
             return rv
         }
 
-        private fun today(): Calendar = Calendar.getInstance()
-
         // ---- Scheduling ----
 
         private fun dayAt(base: Calendar, offsetDays: Int): Calendar =
@@ -240,7 +229,7 @@ class ClassWidgetProvider : AppWidgetProvider() {
                 set(Calendar.MILLISECOND, 0)
             }
 
-        /** Midnight-less epochs: the calendar stays a date, minutes are added. */
+        /** A date-only calendar plus a minute-of-day -> an epoch instant. */
         private fun atMinute(date: Calendar, minuteOfDay: Int): Long =
             date.timeInMillis + minuteOfDay * 60_000L
 

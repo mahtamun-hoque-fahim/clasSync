@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The 3-to-4-row-high home-screen widget. Two glance rows: what is running
-     now, and what is next. All colors are set from code so the accent comes
-     from the widget snapshot. -->
+<!-- Three content lines total, so the widget hugs its content instead of
+     inflating into a tall empty card: NOW label + time, the running (or
+     upcoming) course big, and the NEXT line. Colors are set from code so the
+     accent comes from the widget snapshot and spans can mix per-token colors. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widgetRoot"
     android:layout_width="match_parent"
@@ -10,77 +11,36 @@
     android:gravity="center_vertical"
     android:paddingStart="16dp"
     android:paddingEnd="16dp"
-    android:paddingTop="12dp"
-    android:paddingBottom="12dp">
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp">
 
-    <LinearLayout
-        android:id="@+id/nowRow"
+    <TextView
+        android:id="@+id/nowLine"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:textSize="14sp"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:text="NOW" />
 
-        <TextView
-            android:id="@+id/nowLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="11sp"
-            android:letterSpacing="0.08"
-            android:textStyle="bold"
-            android:singleLine="true"
-            android:text="NOW" />
-
-        <TextView
-            android:id="@+id/nowMain"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:singleLine="true"
-            android:ellipsize="end"
-            android:text="Open ClasSync" />
-
-        <TextView
-            android:id="@+id/nowSub"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="13sp"
-            android:singleLine="true"
-            android:ellipsize="end"
-            android:text="Your routine has not reached the widget yet" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/nextRow"
+    <TextView
+        android:id="@+id/nowMain"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="4dp"
+        android:textSize="21sp"
+        android:textStyle="bold"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:text="Open ClasSync" />
 
-        <TextView
-            android:id="@+id/nextLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="11sp"
-            android:letterSpacing="0.08"
-            android:textStyle="bold"
-            android:singleLine="true"
-            android:text="NEXT" />
-
-        <TextView
-            android:id="@+id/nextMain"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="17sp"
-            android:textStyle="bold"
-            android:singleLine="true"
-            android:ellipsize="end" />
-
-        <TextView
-            android:id="@+id/nextSub"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="13sp"
-            android:singleLine="true"
-            android:ellipsize="end" />
-    </LinearLayout>
+    <TextView
+        android:id="@+id/nextLine"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textSize="14sp"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:text="NEXT" />
 </LinearLayout>

@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Sized like a 250dp x 180dp glance widget: full width on most grids,
-     3-4 launcher rows tall. updatePeriodMillis is just a safety net - the
-     provider schedules exact alarms per class boundary itself. -->
+<!-- Full-width glance widget, 2 launcher rows tall by default; content hugs
+     so resizing upward stays clean. The previews show the real layout/PNG,
+     not the launcher icon. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_description"
     android:minWidth="250dp"
-    android:minHeight="180dp"
+    android:minHeight="110dp"
     android:targetCellWidth="4"
-    android:targetCellHeight="3"
+    android:targetCellHeight="2"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:updatePeriodMillis="7200000"
-    android:initialLayout="@layout/class_widget" />
+    android:initialLayout="@layout/class_widget"
+    android:previewLayout="@layout/class_widget_preview"
+    android:previewImage="@drawable/widget_preview" />

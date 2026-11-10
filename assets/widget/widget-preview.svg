@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Source of truth for the widget picker preview (previewImage). Rendered by
+     tool/widget_preview.js into drawable-nodpi/widget_preview.png.
+     Shows the dark appearance: the phone this ships on runs dark, and the
+     picker page itself is dark, so the bitmap reads as the real widget. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="440" viewBox="0 0 1000 440">
+  <rect width="1000" height="440" rx="72" fill="#211F26"/>
+  <text x="64" y="104" font-family="Segoe UI, Roboto, sans-serif" font-size="44" font-weight="700" fill="#7ED9CE">NOW</text>
+  <text x="180" y="104" font-family="Segoe UI, Roboto, sans-serif" font-size="44" fill="#CAC4D0">09:30–10:20</text>
+  <text x="64" y="222" font-family="Segoe UI, Roboto, sans-serif" font-size="68" font-weight="700" fill="#E6E1E5">STAT · Sabiha Jahan · 140</text>
+  <text x="64" y="356" font-family="Segoe UI, Roboto, sans-serif" font-size="44" font-weight="700" fill="#7ED9CE">NEXT</text>
+  <text x="196" y="356" font-family="Segoe UI, Roboto, sans-serif" font-size="44" fill="#CAC4D0">DLD Lab · 342 · 10:25</text>
+</svg>

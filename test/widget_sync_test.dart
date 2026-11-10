@@ -92,4 +92,10 @@ void main() {
     );
     expect(widgetSnapshot(routine)['accent'], '#1976D2');
   });
+
+  test('snapshot carries the theme-mode override', () {
+    final system = _routine({'Sun': [dm1]});
+    expect(widgetSnapshot(system)['theme'], 'system');
+    expect(widgetSnapshot(system.copyWith(themeMode: 'dark'))['theme'], 'dark');
+  });
 }

@@ -3,4 +3,7 @@
     <color name="widget_bg">#FFFFFFFF</color>
     <color name="widget_on_bg">#FF1B1B1F</color>
     <color name="widget_dim">#FF60646B</color>
+    <!-- Static only: the preview layout inflates without code, so the accent
+         comes from a resource, not the snapshot. -->
+    <color name="widget_accent">#FF009688</color>
 </resources>

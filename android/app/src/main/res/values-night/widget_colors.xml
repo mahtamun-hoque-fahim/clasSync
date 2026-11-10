@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Overrides with the same names, so code that resolves one color id gets
-     the dark variant automatically in night mode. widget_bg_night is a
-     distinct drawable-only color: day and night use different drawables. -->
+<!-- Night-mode overrides with the same names, so code resolving one color id
+     gets the dark variant automatically. The single widget_bg drawable
+     therefore themes itself; no separate night drawable is needed. -->
 <resources>
-    <color name="widget_bg_night">#FF211F26</color>
+    <color name="widget_bg">#FF211F26</color>
     <color name="widget_on_bg">#FFE6E1E5</color>
     <color name="widget_dim">#FFCAC4D0</color>
+    <color name="widget_accent">#FF7ED9CE</color>
 </resources>
