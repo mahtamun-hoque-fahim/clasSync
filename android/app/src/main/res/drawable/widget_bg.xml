@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Widget backgrounds chosen in code by the app's effective theme. Both
+     solids are the Material 3 card-surface tones (surfaceContainerLow):
+     a soft grey in dark mode, never pure black. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <solid android:color="@color/widget_bg" />
     <corners android:radius="22dp" />

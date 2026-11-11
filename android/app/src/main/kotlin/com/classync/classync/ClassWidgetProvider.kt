@@ -8,8 +8,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.content.res.ColorStateList
-import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Build
@@ -140,26 +138,17 @@ class ClassWidgetProvider : AppWidgetProvider() {
         private fun buildViews(context: Context, snapshot: String?): RemoteViews {
             val rv = RemoteViews(context.packageName, R.layout.class_widget)
 
-            // The snapshot carries the app's actual Material 3 palette for
-            // both modes, so the widget is literally the app's theme and dark
-            // mode is the soft M3 dark surface, not pure black. The
-            // configuration-resourced pairs below are only a fallback.
-            val configNight =
-                (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-                        Configuration.UI_MODE_NIGHT_YES
+            // The snapshot's palette comes from the app's Material 3 scheme;
+            // the configuration-resourced colors below are only a fallback.
 
             // Parse fails leave the placeholder text; editing the routine in the
             // app overwrites the snapshot shortly afterwards anyway.
             val root = runCatching { snapshot?.let(::JSONObject) }.getOrNull()
             val days = root?.optJSONObject("days")
-            val themePref = root?.optString("theme", "system") ?: "system"
-            val effectiveDark = when (themePref) {
-                "light" -> false
-                "dark" -> true
-                else -> configNight
-            }
-            val scheme = root?.optJSONObject("palette")
-                ?.optJSONObject(if (effectiveDark) "dark" else "light")
+            // The widget is locked to the light theme: white card and dark ink
+            // forever, no toggling with the app's or the system's dark mode.
+            // Only the accent follows the app (palette.light).
+            val scheme = root?.optJSONObject("palette")?.optJSONObject("light")
 
             fun snapColor(name: String, fallback: Int): Int =
                 scheme?.optString(name)
@@ -167,41 +156,14 @@ class ClassWidgetProvider : AppWidgetProvider() {
                     ?.let { runCatching { Color.parseColor(it) }.getOrNull() }
                     ?: fallback
 
-            val onBg = snapColor(
-                "onBg",
-                context.getColor(
-                    if (effectiveDark) R.color.widget_on_bg_dark else R.color.widget_on_bg_light
-                ),
-            )
-            val dim = snapColor(
-                "dim",
-                context.getColor(
-                    if (effectiveDark) R.color.widget_dim_dark else R.color.widget_dim_light
-                ),
-            )
-            val accent = snapColor(
-                "accent",
-                context.getColor(
-                    if (effectiveDark) R.color.widget_accent_dark else R.color.widget_accent_light
-                ),
-            )
-            val bgColor = scheme?.optString("bg")
-                ?.takeIf { it.isNotEmpty() }
-                ?.let { runCatching { Color.parseColor(it) }.getOrNull() }
-            if (bgColor != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                // The exact scheme color wins: an SRC_IN tint over the opaque
-                // shape replaces its solid while the drawable keeps the corners.
-                rv.setColorStateList(
-                    R.id.widgetRoot,
-                    "setBackgroundTintList",
-                    ColorStateList.valueOf(bgColor),
-                )
-            } else {
-                rv.setInt(
-                    R.id.widgetRoot, "setBackgroundResource",
-                    if (effectiveDark) R.drawable.widget_bg_dark else R.drawable.widget_bg,
-                )
-            }
+            val onBg = snapColor("onBg", context.getColor(R.color.widget_on_bg))
+            val dim = snapColor("dim", context.getColor(R.color.widget_dim))
+            val accent = snapColor("accent", context.getColor(R.color.widget_accent))
+            // The background goes through a resource on the inner card view,
+            // never the layout root: the MIUI host keeps the initial-layout
+            // root background and ignores runtime swaps of it, while
+            // child-view updates apply fine.
+            rv.setInt(R.id.widgetCard, "setBackgroundResource", R.drawable.widget_bg)
 
             if (root == null || days == null) {
                 rv.setTextViewText(R.id.nowLine, labeled("CLASYNC", "", dim, dim))

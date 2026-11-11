@@ -50,13 +50,13 @@ String _hex(Color color) =>
     '#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 
 /// The widget's palette for one brightness, taken straight from the app's
-/// Material 3 scheme so the widget is literally the app's theme: the Card
-/// color (surfaceContainerLow) as the rounded background — soft grey in dark
-/// mode, never pure black — onSurface for the main line, onSurfaceVariant for
-/// secondary text, and primary as the accent. Computed in Dart because
-/// ColorScheme.fromSeed lives there; the values freeze into the snapshot.
+/// Material 3 scheme so the widget is literally the app's theme: onSurface
+/// for the main line, onSurfaceVariant for secondary text, primary as the
+/// accent. The background itself goes through the bg drawables, whose solids
+/// are set to the card-surface tone — a runtime tint never survives the
+/// launcher host. Computed in Dart because ColorScheme.fromSeed lives there;
+/// the values freeze into the snapshot.
 Map<String, String> _palette(ColorScheme cs) => {
-      'bg': _hex(cs.surfaceContainerLow),
       'onBg': _hex(cs.onSurface),
       'dim': _hex(cs.onSurfaceVariant),
       'accent': _hex(cs.primary),
@@ -68,16 +68,11 @@ Map<String, String> _palette(ColorScheme cs) => {
 Map<String, dynamic> widgetSnapshot(Routine r) {
   final seed = swatches[r.accent]?.toARGB32() ?? swatches['blue']!.toARGB32();
   return {
-    // The widget mirrors the app's System / Light / Dark choice too: the
-    // provider falls back to the system setting only when this is "system".
-    'theme': r.themeMode,
-    // Both Material 3 schemes of the chosen accent, so dark mode is the app's
-    // soft M3 dark surface rather than pure black.
+    // The widget keeps a fixed white (light) card regardless of the app's or
+    // the system's dark mode; only the accent follows the app, shipped as the
+    // Material 3 light scheme of the chosen seed.
     'palette': {
       'light': _palette(ColorScheme.fromSeed(seedColor: Color(seed))),
-      'dark': _palette(
-        ColorScheme.fromSeed(seedColor: Color(seed), brightness: Brightness.dark),
-      ),
     },
     'days': {
       for (final day in validDays)

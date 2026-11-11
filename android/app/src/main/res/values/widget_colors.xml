@@ -1,21 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Explicit light/dark pairs chosen in code, not by configuration: the widget
-     follows the APP's System/Light/Dark choice, which can differ from the
-     system. The un-suffixed names (widget_bg, widget_on_bg, widget_dim,
-     widget_accent) stay configuration-qualified and are used only by the
-     statically inflated preview layout. -->
+<!-- The widget is locked to the light theme, so a single set of colors, never
+     configuration-qualified: the launcher's night config must not recolor it.
+     The tones follow the app's M3 light scheme. -->
 <resources>
-    <color name="widget_bg_light">#FFFFFFFF</color>
-    <color name="widget_on_bg_light">#FF1B1B1F</color>
-    <color name="widget_dim_light">#FF60646B</color>
-    <color name="widget_accent_light">#FF009688</color>
-
-    <color name="widget_bg_dark">#FF211F26</color>
-    <color name="widget_on_bg_dark">#FFE6E1E5</color>
-    <color name="widget_dim_dark">#FFCAC4D0</color>
-    <color name="widget_accent_dark">#FF7ED9CE</color>
-
-    <color name="widget_bg">#FFFFFFFF</color>
+    <color name="widget_bg">#FFF7F9FB</color>
     <color name="widget_on_bg">#FF1B1B1F</color>
     <color name="widget_dim">#FF60646B</color>
     <color name="widget_accent">#FF009688</color>

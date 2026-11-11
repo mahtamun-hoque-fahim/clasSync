@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Dark background chosen in code when the app's theme override says dark.
-     The light twin is widget_bg.xml; RemoteViews swaps between the two with
-     setBackgroundResource, since a static layout attribute can only ever
-     resolve one configuration-qualified drawable. -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="@color/widget_bg_dark" />
-    <corners android:radius="22dp" />
-</shape>

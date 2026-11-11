@@ -1,46 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Three content lines total, so the widget hugs its content instead of
-     inflating into a tall empty card: NOW label + time, the running (or
-     upcoming) course big, and the NEXT line. Colors are set from code so the
-     accent comes from the widget snapshot and spans can mix per-token colors. -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- The themed card lives on an inner view, not the layout root: the MIUI
+     host ignores runtime background changes on the RemoteViews root and keeps
+     the initial-layout background, so the root stays transparent and only
+     widgetCard is swapped (light/dark) from code. Three content lines: NOW
+     label + time, the running (or upcoming) course big, and the NEXT line.
+     Colors are set from code so the accent comes from the widget snapshot. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widgetRoot"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center_vertical"
-    android:paddingStart="18dp"
-    android:paddingEnd="18dp"
-    android:paddingTop="12dp"
-    android:paddingBottom="12dp">
+    android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/nowLine"
+    <LinearLayout
+        android:id="@+id/widgetCard"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textSize="14sp"
-        android:singleLine="true"
-        android:ellipsize="end"
-        android:text="NOW" />
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:background="@drawable/widget_bg"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp">
 
-    <TextView
-        android:id="@+id/nowMain"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:textSize="21sp"
-        android:textStyle="bold"
-        android:singleLine="true"
-        android:ellipsize="end"
-        android:text="Open ClasSync" />
+        <TextView
+            android:id="@+id/nowLine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:text="NOW" />
 
-    <TextView
-        android:id="@+id/nextLine"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:textSize="14sp"
-        android:singleLine="true"
-        android:ellipsize="end"
-        android:text="NEXT" />
-</LinearLayout>
+        <TextView
+            android:id="@+id/nowMain"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="21sp"
+            android:textStyle="bold"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:text="Open ClasSync" />
+
+        <TextView
+            android:id="@+id/nextLine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textSize="14sp"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:text="NEXT" />
+    </LinearLayout>
+</FrameLayout>

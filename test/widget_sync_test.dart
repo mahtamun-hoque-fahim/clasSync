@@ -73,20 +73,16 @@ void main() {
     expect((snapshot['days'] as Map)['Tue'], isEmpty);
   });
 
-  test('snapshot is valid JSON and carries both Material 3 palettes', () {
+  test('snapshot is valid JSON and carries the light Material 3 palette', () {
     final snapshot = widgetSnapshot(_routine({'Sun': [dm1]}, accent: 'teal'));
     final decoded = jsonDecode(jsonEncode(snapshot)) as Map<String, dynamic>;
     final light = decoded['palette']['light'] as Map<String, dynamic>;
-    final dark = decoded['palette']['dark'] as Map<String, dynamic>;
-    for (final mode in [light, dark]) {
-      expect(mode['bg'], startsWith('#'));
-      expect(mode['onBg'], startsWith('#'));
-      expect(mode['dim'], startsWith('#'));
-      expect(mode['accent'], startsWith('#'));
-    }
-    // Dark must be the app's soft M3 dark surface, never pure black.
-    expect(dark['bg'], isNot('#000000'));
-    expect(dark['bg'], isNot(light['bg']));
+    expect(light['onBg'], startsWith('#'));
+    expect(light['dim'], startsWith('#'));
+    expect(light['accent'], startsWith('#'));
+    // The widget is locked light: no dark palette, no theme field.
+    expect(decoded['palette'], hasLength(1));
+    expect(decoded, isNot(contains('theme')));
     // Merge loop must not have consumed periods greedily: three periods remain.
     expect(decoded['days']['Sun'], hasLength(1));
   });
@@ -111,11 +107,5 @@ void main() {
         ),
       )['palette'],
     );
-  });
-
-  test('snapshot carries the theme-mode override', () {
-    final system = _routine({'Sun': [dm1]});
-    expect(widgetSnapshot(system)['theme'], 'system');
-    expect(widgetSnapshot(system.copyWith(themeMode: 'dark'))['theme'], 'dark');
   });
 }
