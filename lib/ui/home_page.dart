@@ -216,8 +216,25 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+/// Gradient for the class running right now: a lighter wash of the accent at
+/// the top melting into the full accent, so the slot reads as filled with the
+/// accent, not washed with a pale container. In dark mode the scheme's primary
+/// is already a light tone, so the ramp runs from it down to a deeper shade.
+LinearGradient liveGradient(ColorScheme scheme, Brightness brightness) {
+  final primary = scheme.primary;
+  final dark = brightness == Brightness.dark;
+  return LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      Color.lerp(primary, Colors.white, dark ? 0.10 : 0.30)!,
+      Color.lerp(primary, Colors.black, dark ? 0.15 : 0.0)!,
+    ],
+  );
+}
+
 /// One row of today's timetable. The class that is running right now is filled
-/// with the accent container, so the current slot stands out from the rest.
+/// with the accent gradient, so the current slot stands out from the rest.
 class _TodayRow extends StatelessWidget {
   final Period period;
   final ClassCell? cell;
@@ -235,28 +252,35 @@ class _TodayRow extends StatelessWidget {
     final on = theme.colorScheme.onPrimary;
     final cell = this.cell;
     return Material(
-      color: live ? theme.colorScheme.primary : Colors.transparent,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        textColor: live ? on : null,
-        iconColor: live ? on : null,
-        leading: Text(
-          '${period.start}\n${period.end}',
-          style: live ? TextStyle(color: on.withValues(alpha: 0.8)) : null,
-        ),
-        title: Text(cell?.course ?? 'Gap'),
-        subtitle: cell == null
-            ? null
-            : Text(
-                [
-                  if (cell.teacher.isNotEmpty) cell.teacher,
-                  cell.room,
-                ].join(' · '),
-              ),
-        trailing: cell?.tough == true
-            ? const Icon(Icons.circle, color: toughColor, size: 14)
+      child: Ink(
+        decoration: live
+            ? BoxDecoration(
+                gradient: liveGradient(theme.colorScheme, theme.brightness),
+              )
             : null,
+        child: ListTile(
+          textColor: live ? on : null,
+          iconColor: live ? on : null,
+          leading: Text(
+            '${period.start}\n${period.end}',
+            style: live ? TextStyle(color: on.withValues(alpha: 0.8)) : null,
+          ),
+          title: Text(cell?.course ?? 'Gap'),
+          subtitle: cell == null
+              ? null
+              : Text(
+                  [
+                    if (cell.teacher.isNotEmpty) cell.teacher,
+                    cell.room,
+                  ].join(' · '),
+                ),
+          trailing: cell?.tough == true
+              ? const Icon(Icons.circle, color: toughColor, size: 14)
+              : null,
+        ),
       ),
     );
   }
@@ -285,36 +309,37 @@ class _SlotCard extends StatelessWidget {
     // A tough class keeps its amber; that reads the same on any accent.
     final highlight = live && !tough;
     final onHighlight = theme.colorScheme.onPrimary;
-    final colour = tough
-        ? toughColor
-        : highlight
-            ? theme.colorScheme.primary
-            : null;
-    final ink = tough
-        ? Colors.black
-        : highlight
-            ? onHighlight
-            : null;
+    final colour = tough ? toughColor : null;
+    final ink = tough ? Colors.black : (highlight ? onHighlight : null);
     return Card(
-      color: colour,
-      child: DefaultTextStyle.merge(
-        style: ink == null ? null : TextStyle(color: ink),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: SizedBox(
-            width: double.infinity,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label),
-                const SizedBox(height: 4),
-                Text(
-                  slot?.cell.label ?? empty,
-                  style: text.titleLarge?.copyWith(color: ink),
-                ),
-                if (slot != null) Text('${slot.period.start}–${slot.period.end}'),
-                if (tough) const Text('Snacks before the class.'),
-              ],
+      color: highlight ? Colors.transparent : colour,
+      clipBehavior: Clip.antiAlias,
+      child: Ink(
+        decoration: highlight
+            ? BoxDecoration(
+                gradient: liveGradient(theme.colorScheme, theme.brightness),
+              )
+            : null,
+        child: DefaultTextStyle.merge(
+          style: ink == null ? null : TextStyle(color: ink),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label),
+                  const SizedBox(height: 4),
+                  Text(
+                    slot?.cell.label ?? empty,
+                    style: text.titleLarge?.copyWith(color: ink),
+                  ),
+                  if (slot != null)
+                    Text('${slot.period.start}–${slot.period.end}'),
+                  if (tough) const Text('Snacks before the class.'),
+                ],
+              ),
             ),
           ),
         ),

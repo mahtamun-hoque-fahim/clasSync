@@ -156,7 +156,24 @@ void main() {
         )
         .color;
 
-    expect(fill('LIVE'), buildTheme('blue').colorScheme.primary);
+    Gradient? gradientOf(String text) {
+      // ListTile wraps itself in an Ink with a transparent ShapeDecoration, so
+      // the gradient lives on a second Ink ancestor — pick the one that has it.
+      final inks = find.ancestor(of: find.text(text), matching: find.byType(Ink));
+      for (final ink in tester.widgetList<Ink>(inks)) {
+        final decoration = ink.decoration;
+        if (decoration is BoxDecoration) return decoration.gradient;
+      }
+      return null;
+    }
+
+    // The live row is filled with the accent gradient, not a flat pale fill.
+    final live = liveGradient(
+      buildTheme('blue').colorScheme,
+      Brightness.light,
+    );
+    expect(gradientOf('LIVE'), live);
+    expect(gradientOf('Gap'), isNull);
     expect(fill('Gap'), Colors.transparent);
 
     Color? card(String label) => tester
@@ -166,7 +183,8 @@ void main() {
         )
         .color;
 
-    expect(card('Now'), buildTheme('blue').colorScheme.primary);
+    expect(card('Now'), Colors.transparent);
+    expect(gradientOf('Now'), live);
     expect(
       card('Next'),
       isNot(buildTheme('blue').colorScheme.primary),
