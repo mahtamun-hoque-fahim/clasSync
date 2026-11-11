@@ -158,6 +158,19 @@ void main() {
 
     expect(fill('LIVE'), buildTheme('blue').colorScheme.primaryContainer);
     expect(fill('Gap'), Colors.transparent);
+
+    Color? card(String label) => tester
+        .widget<Card>(
+          find.ancestor(of: find.text(label), matching: find.byType(Card))
+              .first,
+        )
+        .color;
+
+    expect(card('Now'), buildTheme('blue').colorScheme.primary);
+    expect(
+      card('Next'),
+      isNot(buildTheme('blue').colorScheme.primary),
+    );
     await finish(tester);
   });
 }

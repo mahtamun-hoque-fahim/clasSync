@@ -180,7 +180,12 @@ class _HomePageState extends State<HomePage> {
           return ListView(
             padding: const EdgeInsets.all(12),
             children: [
-              _SlotCard(label: 'Now', slot: t.now, empty: 'No class now'),
+              _SlotCard(
+                label: 'Now',
+                slot: t.now,
+                empty: 'No class now',
+                live: t.now != null,
+              ),
               _SlotCard(
                 label: 'Next',
                 slot: t.next,
@@ -261,21 +266,39 @@ class _SlotCard extends StatelessWidget {
   final String label, empty;
   final Slot? slot;
 
+  /// True when this card is showing the class that is running right now.
+  final bool live;
+
   const _SlotCard({
     required this.label,
     required this.slot,
     required this.empty,
+    this.live = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
+    final theme = Theme.of(context);
+    final text = theme.textTheme;
     final slot = this.slot;
     final tough = slot?.cell.tough ?? false;
+    // A tough class keeps its amber; that reads the same on any accent.
+    final highlight = live && !tough;
+    final onHighlight = theme.colorScheme.onPrimary;
+    final colour = tough
+        ? toughColor
+        : highlight
+            ? theme.colorScheme.primary
+            : null;
+    final ink = tough
+        ? Colors.black
+        : highlight
+            ? onHighlight
+            : null;
     return Card(
-      color: tough ? toughColor : null,
+      color: colour,
       child: DefaultTextStyle.merge(
-        style: tough ? const TextStyle(color: Colors.black) : null,
+        style: ink == null ? null : TextStyle(color: ink),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: SizedBox(
@@ -287,9 +310,7 @@ class _SlotCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   slot?.cell.label ?? empty,
-                  style: text.titleLarge?.copyWith(
-                    color: tough ? Colors.black : null,
-                  ),
+                  style: text.titleLarge?.copyWith(color: ink),
                 ),
                 if (slot != null) Text('${slot.period.start}–${slot.period.end}'),
                 if (tough) const Text('Snacks before the class.'),
