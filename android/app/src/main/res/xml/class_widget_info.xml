@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Full-width glance widget, 2 launcher rows tall by default; content hugs
-     so resizing upward stays clean. The previews show the real layout/PNG,
-     not the launcher icon. -->
+<!-- Sized to the app's Now card, measured live on the phone: 327dp x 96dp
+     (720px/2 density = 360dp-wide screen, card 654x192px). Four columns wide
+     with a 96dp minimum height; content hugs so resizing stays clean. The
+     previews show the real layout/PNG, not the launcher icon. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_description"
     android:minWidth="250dp"
-    android:minHeight="110dp"
+    android:minHeight="96dp"
     android:targetCellWidth="4"
     android:targetCellHeight="2"
     android:resizeMode="horizontal|vertical"
