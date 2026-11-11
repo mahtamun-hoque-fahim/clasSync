@@ -4,11 +4,11 @@ Weekly class routine for Android and web, with a silent lock-screen alert before
 
 ## Current State
 
-- Updated: 2026-11-10
+- Updated: 2026-11-11
 - Status: Beta — single user, installed on one phone (Redmi `25078RA3EA`)
-- Works: Google sign-in; routine sync through Firestore; routine and teacher editing; CT (class test) add/edit/delete with custom reminders; CT auto-delete once its time passes; scheduling and delivery of exact alarms; a one-line **lock-screen alert** that wakes the screen, sits over the keyguard and closes itself after 20 s; a 250 x 180dp **home-screen widget** showing the class now and the next one, kept fresh by its own exact alarms; the class running right now filled with the accent in today's list; gap-period reminder at 08:00 on class days; settings (accent, theme mode, class days, reminder offsets, JSON import) with switchable System/Light/Dark theme synced in the routine doc; newly generated app icon on the launcher; notification small icon; web dashboard build.
-- In progress: nothing half-built in code. The widget is built and compile-verified, but not yet observed on the launcher.
-- Next: (1) re-run the release APK build and confirm the alert screen there, since everything so far was verified with a debug build; (2) decide whether the alert should also cancel the notification instead of leaving it in the shade.
+- Works: Google sign-in; routine sync through Firestore; routine and teacher editing; CT (class test) add/edit/delete with custom reminders; CT auto-delete once its time passes; scheduling and delivery of exact alarms; a one-line **lock-screen alert** that wakes the screen, sits over the keyguard and closes itself after 20 s; a 250 x 180dp **home-screen widget** showing the class now and the next one, kept fresh by its own exact alarms; the class running right now filled with the full accent both in the **Now** card at the top and in today's list; gap-period reminder at 08:00 on class days; settings (accent, theme mode, class days, reminder offsets, JSON import) with switchable System/Light/Dark theme synced in the routine doc; newly generated app icon on the launcher; notification small icon; web dashboard build.
+- In progress: nothing half-built in code. The widget is placed and observed on the launcher (home-screen page 5; page 1 is full), and its Now/Next data and self-refresh are confirmed on the device.
+- Next: (1) re-run the release APK build and confirm both the alert screen and the widget there, since everything so far was verified with a debug build; (2) decide whether the alert should also cancel the notification instead of leaving it in the shade.
 - Watch out: `flutter_local_notifications` builds its pending intent from `getLaunchIntentForPackage()`, so **`RouterActivity` must keep the `MAIN`/`LAUNCHER` filter**. Move that filter back to `MainActivity` and every alert silently opens the dashboard again with no error anywhere. `AlertActivity` is `exported="false"`, so only that router can start it.
 - Watch out: firing the test alert twice in a row without clearing the notification does **not** re-trigger the full-screen intent. The second post has the same id and is treated as an update, so the screen stays off and it looks as if the alert is broken. Force-stop the app (or dismiss the notification) between test runs.
 
@@ -45,6 +45,7 @@ Execute automatically at the start of every session, before the first commit —
 - Accents come from `lib/theme.dart` `swatches`. The default `teal` seed `0xFF009688` produces M3 primary `#006A60`, used for the icon background and web theme colour.
 - The icon source of truth is `assets/icon/clasSync-icon.svg`. Never hand-edit the generated PNGs; edit the SVG and re-run the generator.
 - A CT is time-bound data, not a schedule: it deletes itself once its time passes, and alerts are only built for CTs whose reminder time is still in the future.
+- "Active right now" is expressed with the **full** accent: `colorScheme.primary` + `onPrimary`. Never `primaryContainer` / `surfaceVariant` for a live state — the user reads a pale tint as disabled, not as now. The only exception is a tough class, which keeps its amber.
 
 ## Security Gotchas
 
@@ -53,6 +54,17 @@ Execute automatically at the start of every session, before the first commit —
 - `showWhenLocked` + `turnScreenOn` mean the alert activity is visible and interactive while the device is locked. Nothing behind it is exempt from the lock, but anything rendered there can be read without unlocking — keep the alert screen to the minimum class detail.
 
 ## Session Log
+
+### 2026-11-11 (accent-highlight session)
+- By: DeepSeek V4.1 Flash Free (OpenCode)
+- Did: Placed the widget on the launcher for real, through long-press → Widgets → search `ClasSync`, because `am start -a android.appwidget.action.APPWIDGET_PICK` does nothing on the MIUI/HyperOS launcher (it also crashes `com.android.settings`' picker). It bound to `com.miui.home` host `1024` at provider `[157]` and landed on home-screen page 5 — page 1 is already full. The user can drag it wherever they want it.
+- Did: Verified the widget's data on the device, both states. With nothing live it read `Next class / DLD at 09:30 · 224`; while a period was live it re-rendered itself to `NOW / DLD / ASD · 224 · 06:50–10:20` plus `NEXT / Math-3`, proving the per-boundary exact alarm re-fires without the Flutter process.
+- Did: Filled the **Now** card above the list with the accent while a class is running, so the running class is obvious at the top of the screen and not only in a row further down. It takes `colorScheme.primary` with `onPrimary` text, and falls back to the plain surface when nothing is live. A tough class keeps its amber, since amber reads the same on any accent.
+- Did: Moved the live Today row from `primaryContainer` to `colorScheme.primary` as well. The user rejected the pale tint: a pale wash of the accent reads as a disabled or secondary state, not as "this is happening now".
+- Did: Proved both highlights on the device without root. `adb shell date` cannot set the clock, so a period's start was temporarily moved to cover the current minute (dial picker), screenshotted with the card and the row filled, then restored to `09:30`. The routine was left exactly as the user's: period 1 `09:30 – 10:20`, periods 2-6 on the hour+5 grid, Sun/Mon/Tue/Wed, Light, blue.
+- Learned: The time picker is only drivable in **dial mode** (tap the clock icon to leave text mode). In text mode the soft keyboard shifts the dialog up ~350px and every tap lands on the wrong thing; in dial mode it is stable and one tap per value.
+- Learned: A test alert fired twice with the same notification id is treated as an update, so the full-screen intent does not re-fire and the alert looks broken. Force-stop between runs.
+- Committed: `7bf69bf` Now card in the accent, `31519d9` live row in the full accent, `2cee07e` ignore the icon generator's local `node_modules`. `flutter analyze` clean, all 141 tests pass, debug APK installed and observed on the phone.
 
 ### 2026-11-10 (widget session)
 - By: GLM-5.3-Flash Free (OpenCode)
