@@ -232,10 +232,10 @@ class _TodayRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final on = theme.colorScheme.onPrimaryContainer;
+    final on = theme.colorScheme.onPrimary;
     final cell = this.cell;
     return Material(
-      color: live ? theme.colorScheme.primaryContainer : Colors.transparent,
+      color: live ? theme.colorScheme.primary : Colors.transparent,
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: ListTile(

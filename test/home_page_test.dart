@@ -156,7 +156,7 @@ void main() {
         )
         .color;
 
-    expect(fill('LIVE'), buildTheme('blue').colorScheme.primaryContainer);
+    expect(fill('LIVE'), buildTheme('blue').colorScheme.primary);
     expect(fill('Gap'), Colors.transparent);
 
     Color? card(String label) => tester
