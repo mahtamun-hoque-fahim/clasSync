@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Night-mode overrides with the same names, so code resolving one color id
-     gets the dark variant automatically. The single widget_bg drawable
-     therefore themes itself; no separate night drawable is needed. -->
+<!-- Night overrides exist only for the preview layout, which inflates inside
+     the launcher with the launcher's configuration and without code. The real
+     widget resolves both themes in code from the explicit pairs above. -->
 <resources>
     <color name="widget_bg">#FF211F26</color>
     <color name="widget_on_bg">#FFE6E1E5</color>

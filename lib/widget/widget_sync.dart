@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../model/routine.dart';
@@ -48,19 +49,35 @@ List<WidgetSlot> widgetSlots(Routine r, String day) {
 String _hex(Color color) =>
     '#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 
+/// The widget's palette for one brightness, taken straight from the app's
+/// Material 3 scheme so the widget is literally the app's theme: surface as
+/// the rounded background, onSurface for the main line, onSurfaceVariant for
+/// secondary text, and primary as the accent. Computed in Dart because
+/// ColorScheme.fromSeed lives there; the values freeze into the snapshot.
+Map<String, String> _palette(ColorScheme cs) => {
+      'bg': _hex(cs.surface),
+      'onBg': _hex(cs.onSurface),
+      'dim': _hex(cs.onSurfaceVariant),
+      'accent': _hex(cs.primary),
+    };
+
 /// Full snapshot: every scheduled day of the week, so the widget resolves
 /// now/next for any day without the app running. A day with no classes is
 /// included as an empty list, so "no classes today" is instant.
 Map<String, dynamic> widgetSnapshot(Routine r) {
-  final accent = swatches[r.accent] ?? swatches['blue']!;
+  final seed = swatches[r.accent]?.toARGB32() ?? swatches['blue']!.toARGB32();
   return {
-    // The seed color reads fine on a light widget; on a dark one it needs a
-    // lighter version, computed here because Dart owns the color utilities.
-    'accent': _hex(accent),
-    'accentOnDark': _hex(Color.lerp(accent, const Color(0xFFFFFFFF), 0.45)!),
     // The widget mirrors the app's System / Light / Dark choice too: the
     // provider falls back to the system setting only when this is "system".
     'theme': r.themeMode,
+    // Both Material 3 schemes of the chosen accent, so dark mode is the app's
+    // soft M3 dark surface rather than pure black.
+    'palette': {
+      'light': _palette(ColorScheme.fromSeed(seedColor: Color(seed))),
+      'dark': _palette(
+        ColorScheme.fromSeed(seedColor: Color(seed), brightness: Brightness.dark),
+      ),
+    },
     'days': {
       for (final day in validDays)
         day: [for (final s in widgetSlots(r, day)) s.toJson()],

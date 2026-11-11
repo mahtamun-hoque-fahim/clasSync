@@ -8,6 +8,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Typeface
@@ -139,9 +140,10 @@ class ClassWidgetProvider : AppWidgetProvider() {
         private fun buildViews(context: Context, snapshot: String?): RemoteViews {
             val rv = RemoteViews(context.packageName, R.layout.class_widget)
 
-            // Resolve every color through the launcher's configuration first,
-            // then let an explicit theme override from the app win: the widget
-            // mirrors the in-app System / Light / Dark choice.
+            // The snapshot carries the app's actual Material 3 palette for
+            // both modes, so the widget is literally the app's theme and dark
+            // mode is the soft M3 dark surface, not pure black. The
+            // configuration-resourced pairs below are only a fallback.
             val configNight =
                 (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                         Configuration.UI_MODE_NIGHT_YES
@@ -150,18 +152,56 @@ class ClassWidgetProvider : AppWidgetProvider() {
             // app overwrites the snapshot shortly afterwards anyway.
             val root = runCatching { snapshot?.let(::JSONObject) }.getOrNull()
             val days = root?.optJSONObject("days")
-            val accent = root?.let { r ->
-                val isDark = when (r.optString("theme", "system")) {
-                    "light" -> false
-                    "dark" -> true
-                    else -> configNight
-                }
-                val hex = if (isDark) r.optString("accentOnDark") else r.optString("accent")
-                runCatching { Color.parseColor(hex) }.getOrNull()
-                    ?: context.getColor(R.color.widget_accent)
-            } ?: context.getColor(R.color.widget_accent)
-            val onBg = context.getColor(R.color.widget_on_bg)
-            val dim = context.getColor(R.color.widget_dim)
+            val themePref = root?.optString("theme", "system") ?: "system"
+            val effectiveDark = when (themePref) {
+                "light" -> false
+                "dark" -> true
+                else -> configNight
+            }
+            val scheme = root?.optJSONObject("palette")
+                ?.optJSONObject(if (effectiveDark) "dark" else "light")
+
+            fun snapColor(name: String, fallback: Int): Int =
+                scheme?.optString(name)
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.let { runCatching { Color.parseColor(it) }.getOrNull() }
+                    ?: fallback
+
+            val onBg = snapColor(
+                "onBg",
+                context.getColor(
+                    if (effectiveDark) R.color.widget_on_bg_dark else R.color.widget_on_bg_light
+                ),
+            )
+            val dim = snapColor(
+                "dim",
+                context.getColor(
+                    if (effectiveDark) R.color.widget_dim_dark else R.color.widget_dim_light
+                ),
+            )
+            val accent = snapColor(
+                "accent",
+                context.getColor(
+                    if (effectiveDark) R.color.widget_accent_dark else R.color.widget_accent_light
+                ),
+            )
+            val bgColor = scheme?.optString("bg")
+                ?.takeIf { it.isNotEmpty() }
+                ?.let { runCatching { Color.parseColor(it) }.getOrNull() }
+            if (bgColor != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                // The exact scheme color wins: an SRC_IN tint over the opaque
+                // shape replaces its solid while the drawable keeps the corners.
+                rv.setColorStateList(
+                    R.id.widgetRoot,
+                    "setBackgroundTintList",
+                    ColorStateList.valueOf(bgColor),
+                )
+            } else {
+                rv.setInt(
+                    R.id.widgetRoot, "setBackgroundResource",
+                    if (effectiveDark) R.drawable.widget_bg_dark else R.drawable.widget_bg,
+                )
+            }
 
             if (root == null || days == null) {
                 rv.setTextViewText(R.id.nowLine, labeled("CLASYNC", "", dim, dim))

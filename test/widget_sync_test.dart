@@ -73,11 +73,20 @@ void main() {
     expect((snapshot['days'] as Map)['Tue'], isEmpty);
   });
 
-  test('snapshot is valid JSON with the seed as the light hex', () {
+  test('snapshot is valid JSON and carries both Material 3 palettes', () {
     final snapshot = widgetSnapshot(_routine({'Sun': [dm1]}, accent: 'teal'));
     final decoded = jsonDecode(jsonEncode(snapshot)) as Map<String, dynamic>;
-    expect(decoded['accent'], '#009688');
-    expect(decoded['accentOnDark'], isNot('#009688'));
+    final light = decoded['palette']['light'] as Map<String, dynamic>;
+    final dark = decoded['palette']['dark'] as Map<String, dynamic>;
+    for (final mode in [light, dark]) {
+      expect(mode['bg'], startsWith('#'));
+      expect(mode['onBg'], startsWith('#'));
+      expect(mode['dim'], startsWith('#'));
+      expect(mode['accent'], startsWith('#'));
+    }
+    // Dark must be the app's soft M3 dark surface, never pure black.
+    expect(dark['bg'], isNot('#000000'));
+    expect(dark['bg'], isNot(light['bg']));
     // Merge loop must not have consumed periods greedily: three periods remain.
     expect(decoded['days']['Sun'], hasLength(1));
   });
@@ -90,7 +99,18 @@ void main() {
       teachers: const {},
       cells: const {},
     );
-    expect(widgetSnapshot(routine)['accent'], '#1976D2');
+    expect(
+      widgetSnapshot(routine)['palette'],
+      widgetSnapshot(
+        Routine(
+          accent: 'blue',
+          days: const [],
+          periods: const [],
+          teachers: const {},
+          cells: const {},
+        ),
+      )['palette'],
+    );
   });
 
   test('snapshot carries the theme-mode override', () {
