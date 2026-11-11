@@ -9,10 +9,10 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center_vertical"
-    android:paddingStart="16dp"
-    android:paddingEnd="16dp"
-    android:paddingTop="10dp"
-    android:paddingBottom="10dp">
+    android:paddingStart="18dp"
+    android:paddingEnd="18dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp">
 
     <TextView
         android:id="@+id/nowLine"
@@ -27,7 +27,7 @@
         android:id="@+id/nowMain"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="8dp"
         android:textSize="21sp"
         android:textStyle="bold"
         android:singleLine="true"

@@ -50,12 +50,13 @@ String _hex(Color color) =>
     '#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 
 /// The widget's palette for one brightness, taken straight from the app's
-/// Material 3 scheme so the widget is literally the app's theme: surface as
-/// the rounded background, onSurface for the main line, onSurfaceVariant for
+/// Material 3 scheme so the widget is literally the app's theme: the Card
+/// color (surfaceContainerLow) as the rounded background — soft grey in dark
+/// mode, never pure black — onSurface for the main line, onSurfaceVariant for
 /// secondary text, and primary as the accent. Computed in Dart because
 /// ColorScheme.fromSeed lives there; the values freeze into the snapshot.
 Map<String, String> _palette(ColorScheme cs) => {
-      'bg': _hex(cs.surface),
+      'bg': _hex(cs.surfaceContainerLow),
       'onBg': _hex(cs.onSurface),
       'dim': _hex(cs.onSurfaceVariant),
       'accent': _hex(cs.primary),
