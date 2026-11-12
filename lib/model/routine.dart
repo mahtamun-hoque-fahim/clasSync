@@ -14,6 +14,46 @@ const _validAccents = {
 const _validThemeModes = {'system', 'light', 'dark'};
 
 final _timePattern = RegExp(r'^([01]\d|2[0-3]):[0-5]\d$');
+final _datePattern = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+
+/// The routine's operating mode. "class" runs the normal timetable, "exam"
+/// swaps class states for exam countdowns, "vacation" is a day-off period
+/// between exams and the next class block.
+const validModes = {'class', 'exam', 'vacation'};
+
+/// One exam in exam mode: a course from the routine's course list on a
+/// calendar date, at [time] (HH:mm) — the routine's shared exam time unless
+/// this exam carries its own.
+class Exam {
+  final String course;
+  final String date;
+
+  /// "HH:mm" or null to use the routine's shared exam time.
+  final String? time;
+
+  const Exam({required this.course, required this.date, this.time});
+
+  Map<String, dynamic> toJson() => {
+        'course': course,
+        'date': date,
+        if (time != null) 'time': time,
+      };
+
+  /// Lenient: a malformed exam is dropped, never thrown, so one bad entry
+  /// cannot block a whole pasted list.
+  static Exam? tryFromJson(dynamic raw) {
+    if (raw is! Map) return null;
+    final course = raw['course'];
+    final date = raw['date'];
+    final time = raw['time'];
+    if (course is! String || course.trim().isEmpty) return null;
+    if (date is! String || !_datePattern.hasMatch(date)) return null;
+    if (time != null && (time is! String || !_timePattern.hasMatch(time))) {
+      return null;
+    }
+    return Exam(course: course, date: date, time: time as String?);
+  }
+}
 
 class Period {
   final String start, end;
@@ -66,18 +106,35 @@ class Routine {
 
   /// "system", "light" or "dark"; see [_validThemeModes].
   final String themeMode;
+
+  /// "class", "exam" or "vacation"; see [validModes].
+  final String mode;
   final List<String> days;
   final List<Period> periods;
   final Map<String, String> teachers;
   final Map<String, List<ClassCell?>> cells;
 
+  /// Exams in exam mode, ordered by date (the editor keeps them sorted).
+  final List<Exam> exams;
+
+  /// The shared exam start time, "HH:mm"; an exam's own [Exam.time] overrides it.
+  final String examTime;
+
+  /// Last day of a vacation period, "yyyy-MM-dd"; only meaningful in vacation
+  /// mode, where class states resume the day after it.
+  final String? vacationEnd;
+
   const Routine({
     required this.accent,
     this.themeMode = 'system',
+    this.mode = 'class',
     required this.days,
     required this.periods,
     required this.teachers,
     required this.cells,
+    this.exams = const [],
+    this.examTime = '09:00',
+    this.vacationEnd,
   });
 
   factory Routine.empty() => const Routine(
@@ -92,21 +149,32 @@ class Routine {
   List<ClassCell?> row(String day) =>
       cells[day] ?? List<ClassCell?>.filled(periods.length, null);
 
+  static const _unset = Object();
+
   Routine copyWith({
     String? accent,
     String? themeMode,
+    String? mode,
     List<String>? days,
     List<Period>? periods,
     Map<String, String>? teachers,
     Map<String, List<ClassCell?>>? cells,
+    List<Exam>? exams,
+    String? examTime,
+    Object? vacationEnd = _unset,
   }) =>
       Routine(
         accent: accent ?? this.accent,
         themeMode: themeMode ?? this.themeMode,
+        mode: mode ?? this.mode,
         days: days ?? this.days,
         periods: periods ?? this.periods,
         teachers: teachers ?? this.teachers,
         cells: cells ?? this.cells,
+        exams: exams ?? this.exams,
+        examTime: examTime ?? this.examTime,
+        vacationEnd:
+            vacationEnd == _unset ? this.vacationEnd : vacationEnd as String?,
       );
 
   Routine withCell(String day, int period, ClassCell? cell) {
@@ -147,12 +215,16 @@ class Routine {
   Map<String, dynamic> toJson() => {
         'accent': accent,
         'themeMode': themeMode,
+        'mode': mode,
         'days': days,
         'periods': periods.map((p) => p.toJson()).toList(),
         'teachers': teachers,
         'cells': cells.map(
           (day, row) => MapEntry(day, row.map((c) => c?.toJson()).toList()),
         ),
+        'exams': exams.map((e) => e.toJson()).toList(),
+        'examTime': examTime,
+        if (vacationEnd != null) 'vacationEnd': vacationEnd,
       };
 
   /// Like [parse], for raw text from an imported file.
@@ -267,16 +339,46 @@ class Routine {
 
     final accent = json['accent'];
     final themeMode = json['themeMode'];
+    final mode = json['mode'];
+
+    final exams = <Exam>[];
+    final rawExams = json['exams'];
+    if (rawExams is List) {
+      for (final raw in rawExams) {
+        final exam = Exam.tryFromJson(raw);
+        if (exam != null) exams.add(exam);
+      }
+    } else if (rawExams != null) {
+      errors.add('"exams" must be a list.');
+    }
+    if (errors.isNotEmpty) return (null, errors);
+
+    final examTime = json['examTime'];
+    if (examTime != null &&
+        (examTime is! String || !_timePattern.hasMatch(examTime))) {
+      return (null, ['"examTime" must be 24-hour HH:mm.']);
+    }
+
+    var vacationEnd = json['vacationEnd'];
+    if (vacationEnd != null &&
+        (vacationEnd is! String || !_datePattern.hasMatch(vacationEnd))) {
+      return (null, ['"vacationEnd" must be a yyyy-MM-dd date.']);
+    }
+
     return (
       Routine(
         accent: _validAccents.contains(accent) ? accent as String : 'blue',
         themeMode: _validThemeModes.contains(themeMode)
             ? themeMode as String
             : 'system',
+        mode: validModes.contains(mode) ? mode as String : 'class',
         days: days,
         periods: periods,
         teachers: teachers,
         cells: cells,
+        exams: exams,
+        examTime: examTime is String ? examTime : '09:00',
+        vacationEnd: vacationEnd as String?,
       ),
       <String>[],
     );
