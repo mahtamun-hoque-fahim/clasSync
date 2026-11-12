@@ -66,6 +66,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/default_routine.json
+    - assets/icons/png/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
