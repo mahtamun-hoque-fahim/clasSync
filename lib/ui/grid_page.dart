@@ -85,24 +85,29 @@ class _GridPageState extends State<GridPage> {
           TableRow(children: [
             Text(day, style: text.titleSmall),
             for (var i = 0; i < r.periods.length; i++)
-              _cell(context, r.row(day)[i], () => _edit(r, day, i)),
+              _cell(context, r.accent, r.row(day)[i], () => _edit(r, day, i)),
           ]),
       ],
     );
   }
 
-  Widget _cell(BuildContext context, ClassCell? cell, VoidCallback onTap) {
+  Widget _cell(
+    BuildContext context,
+    String accent,
+    ClassCell? cell,
+    VoidCallback onTap,
+  ) {
     final text = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
-    final onTough = cell?.tough == true ? Colors.black : null;
+    // The accent cell is the raw swatch, never a pale container. Tough keeps
+    // its amber. Ink follows the fill so text stays readable on any swatch.
+    final fill =
+        cell == null ? null : (cell.tough ? toughColor : accentFill(accent));
+    final ink = fill == null ? null : inkOnAccent(fill);
     return Card(
       margin: const EdgeInsets.all(3),
       clipBehavior: Clip.antiAlias,
-      color: cell == null
-          ? scheme.surfaceContainerLow
-          : cell.tough
-              ? toughColor
-              : scheme.primaryContainer,
+      color: fill ?? scheme.surfaceContainerLow,
       child: InkWell(
         onTap: onTap,
         child: SizedBox(
@@ -115,7 +120,7 @@ class _GridPageState extends State<GridPage> {
                     children: [
                       Text(
                         cell.course,
-                        style: text.titleSmall?.copyWith(color: onTough),
+                        style: text.titleSmall?.copyWith(color: ink),
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -125,7 +130,7 @@ class _GridPageState extends State<GridPage> {
                           if (cell.teacher.isNotEmpty) cell.teacher,
                           cell.room,
                         ].join(' · '),
-                        style: text.bodySmall?.copyWith(color: onTough),
+                        style: text.bodySmall?.copyWith(color: ink),
                       ),
                     ],
                   ),

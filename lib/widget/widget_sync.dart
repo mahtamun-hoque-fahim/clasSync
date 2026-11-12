@@ -49,30 +49,33 @@ List<WidgetSlot> widgetSlots(Routine r, String day) {
 String _hex(Color color) =>
     '#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 
-/// The widget's palette for one brightness, taken straight from the app's
-/// Material 3 scheme so the widget is literally the app's theme: onSurface
-/// for the main line, onSurfaceVariant for secondary text, primary as the
-/// accent. The background itself goes through the bg drawables, whose solids
-/// are set to the card-surface tone — a runtime tint never survives the
-/// launcher host. Computed in Dart because ColorScheme.fromSeed lives there;
-/// the values freeze into the snapshot.
-Map<String, String> _palette(ColorScheme cs) => {
+/// The widget's palette for one brightness, taken from the app's theme: the
+/// accent is the raw swatch the user picked (never a derived or pale tone),
+/// onSurface for the main line and onSurfaceVariant for secondary text. The
+/// background itself goes through the bg drawables, whose solids are set to
+/// the card-surface tone — a runtime tint never survives the launcher host.
+/// Computed in Dart because ColorScheme.fromSeed lives there; the values
+/// freeze into the snapshot.
+Map<String, String> _palette(ColorScheme cs, Color accent) => {
       'onBg': _hex(cs.onSurface),
       'dim': _hex(cs.onSurfaceVariant),
-      'accent': _hex(cs.primary),
+      'accent': _hex(accent),
     };
 
 /// Full snapshot: every scheduled day of the week, so the widget resolves
 /// now/next for any day without the app running. A day with no classes is
 /// included as an empty list, so "no classes today" is instant.
 Map<String, dynamic> widgetSnapshot(Routine r) {
-  final seed = swatches[r.accent]?.toARGB32() ?? swatches['blue']!.toARGB32();
+  final accent = accentFill(r.accent);
   return {
     // The widget keeps a fixed white (light) card regardless of the app's or
     // the system's dark mode; only the accent follows the app, shipped as the
-    // Material 3 light scheme of the chosen seed.
+    // raw swatch of the chosen seed.
     'palette': {
-      'light': _palette(ColorScheme.fromSeed(seedColor: Color(seed))),
+      'light': _palette(
+        ColorScheme.fromSeed(seedColor: accent),
+        accent,
+      ),
     },
     'days': {
       for (final day in validDays)

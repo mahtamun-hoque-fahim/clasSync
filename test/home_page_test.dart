@@ -168,10 +168,7 @@ void main() {
     }
 
     // The live row is filled with the accent gradient, not a flat pale fill.
-    final live = liveGradient(
-      buildTheme('blue').colorScheme,
-      Brightness.light,
-    );
+    final live = liveGradient('blue');
     expect(gradientOf('LIVE'), live);
     expect(gradientOf('Gap'), isNull);
     expect(fill('Gap'), Colors.transparent);

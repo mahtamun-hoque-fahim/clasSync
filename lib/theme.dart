@@ -13,6 +13,31 @@ const Map<String, Color> swatches = {
 /// Marks tough periods. Kept apart from [swatches] so it reads the same on any accent.
 const Color toughColor = Color(0xFFFFB74D);
 
+/// The fill for anything the accent owns - the Now card, the live row, the
+/// week-grid cells: the raw swatch the user picked, fully saturated, in both
+/// themes. Material's containers are pale washes and never appear here.
+Color accentFill(String accent) => swatches[accent] ?? swatches['blue']!;
+
+/// Ink that stays readable on any accent fill: dark on light accents (orange),
+/// white on everything else.
+Color inkOnAccent(Color fill) =>
+    fill.computeLuminance() > 0.4 ? Colors.black : Colors.white;
+
+/// Gradient for the live state, straight from the swatch: the top edge lifts
+/// one lightness step and the bottom deepens one, so the ramp is saturated end
+/// to end. Nothing is washed toward white, and no pale tone enters.
+LinearGradient liveGradient(String accent) {
+  final hsl = HSLColor.fromColor(accentFill(accent));
+  return LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      hsl.withLightness((hsl.lightness + 0.10).clamp(0.0, 1.0)).toColor(),
+      hsl.withLightness((hsl.lightness - 0.08).clamp(0.0, 1.0)).toColor(),
+    ],
+  );
+}
+
 /// Maps the stored preference ("system", "light" or "dark") to a mode.
 ThemeMode resolveThemeMode(String value) => switch (value) {
       'light' => ThemeMode.light,

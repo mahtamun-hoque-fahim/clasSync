@@ -186,11 +186,13 @@ class _HomePageState extends State<HomePage> {
                 empty: 'No class now',
                 // Always filled with the accent gradient, live or not.
                 live: true,
+                accent: r.accent,
               ),
               _SlotCard(
                 label: 'Next',
                 slot: t.next,
                 empty: t.isClassDay ? 'No more classes today' : 'No classes today',
+                accent: r.accent,
               ),
               _ctSection(),
               if (t.isClassDay) ...[
@@ -207,6 +209,7 @@ class _HomePageState extends State<HomePage> {
                     period: period,
                     cell: cell,
                     live: isOnNow(period, cell, now),
+                    accent: r.accent,
                   ),
               ],
             ],
@@ -217,57 +220,39 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-/// Gradient for the class running right now: a lighter wash of the accent at
-/// the top melting into the full accent, so the slot reads as filled with the
-/// accent, not washed with a pale container. In dark mode the scheme's primary
-/// is already a light tone, so the ramp runs from it down to a deeper shade.
-LinearGradient liveGradient(ColorScheme scheme, Brightness brightness) {
-  final primary = scheme.primary;
-  final dark = brightness == Brightness.dark;
-  return LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [
-      Color.lerp(primary, Colors.white, dark ? 0.10 : 0.30)!,
-      Color.lerp(primary, Colors.black, dark ? 0.15 : 0.0)!,
-    ],
-  );
-}
-
 /// One row of today's timetable. The class that is running right now is filled
 /// with the accent gradient, so the current slot stands out from the rest.
 class _TodayRow extends StatelessWidget {
   final Period period;
   final ClassCell? cell;
   final bool live;
+  final String accent;
 
   const _TodayRow({
     required this.period,
     required this.cell,
     required this.live,
+    required this.accent,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final on = theme.colorScheme.onPrimary;
     final cell = this.cell;
+    // Ink over the accent comes from contrast, not from the scheme: the accent
+    // fill is the raw swatch in both themes.
+    final ink = live ? inkOnAccent(accentFill(accent)) : null;
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: Ink(
-        decoration: live
-            ? BoxDecoration(
-                gradient: liveGradient(theme.colorScheme, theme.brightness),
-              )
-            : null,
+        decoration: live ? BoxDecoration(gradient: liveGradient(accent)) : null,
         child: ListTile(
-          textColor: live ? on : null,
-          iconColor: live ? on : null,
+          textColor: ink,
+          iconColor: ink,
           leading: Text(
             '${period.start}\n${period.end}',
-            style: live ? TextStyle(color: on.withValues(alpha: 0.8)) : null,
+            style: live ? TextStyle(color: ink!.withValues(alpha: 0.8)) : null,
           ),
           title: Text(cell?.course ?? 'Gap'),
           subtitle: cell == null
@@ -290,6 +275,7 @@ class _TodayRow extends StatelessWidget {
 class _SlotCard extends StatelessWidget {
   final String label, empty;
   final Slot? slot;
+  final String accent;
 
   /// True when this card must be filled with the accent gradient. The Now
   /// card passes true always; the Next card only when it shows the next class.
@@ -299,6 +285,7 @@ class _SlotCard extends StatelessWidget {
     required this.label,
     required this.slot,
     required this.empty,
+    required this.accent,
     this.live = false,
   });
 
@@ -311,17 +298,13 @@ class _SlotCard extends StatelessWidget {
     // The Now card is always filled with the accent gradient, no matter what
     // state it is in - no class, gap, or tough class. The Next card stays plain.
     final highlight = live;
-    final onHighlight = theme.colorScheme.onPrimary;
-    final ink = highlight ? onHighlight : null;
+    final ink = highlight ? inkOnAccent(accentFill(accent)) : null;
     return Card(
       color: highlight ? Colors.transparent : null,
       clipBehavior: Clip.antiAlias,
       child: Ink(
-        decoration: highlight
-            ? BoxDecoration(
-                gradient: liveGradient(theme.colorScheme, theme.brightness),
-              )
-            : null,
+        decoration:
+            highlight ? BoxDecoration(gradient: liveGradient(accent)) : null,
         child: DefaultTextStyle.merge(
           style: ink == null ? null : TextStyle(color: ink),
           child: Padding(
