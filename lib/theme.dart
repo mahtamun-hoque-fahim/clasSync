@@ -23,17 +23,19 @@ Color accentFill(String accent) => swatches[accent] ?? swatches['blue']!;
 Color inkOnAccent(Color fill) =>
     fill.computeLuminance() > 0.4 ? Colors.black : Colors.white;
 
-/// Gradient for the live state, straight from the swatch: the top edge lifts
-/// one lightness step and the bottom deepens one, so the ramp is saturated end
-/// to end. Nothing is washed toward white, and no pale tone enters.
-LinearGradient liveGradient(String accent) {
-  final hsl = HSLColor.fromColor(accentFill(accent));
+/// Gradient for the live state, straight from the user's reference formula:
+/// top stop = the accent at 70% alpha composited over the surface it sits on,
+/// bottom stop = the full accent. Same positions for every swatch; the two
+/// shades derive from the theme. Nothing is washed toward white beyond what
+/// the formula itself does, and no pale container tone enters.
+LinearGradient liveGradient(String accent, Color base) {
+  final a = accentFill(accent);
   return LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [
-      hsl.withLightness((hsl.lightness + 0.10).clamp(0.0, 1.0)).toColor(),
-      hsl.withLightness((hsl.lightness - 0.08).clamp(0.0, 1.0)).toColor(),
+      Color.alphaBlend(a.withValues(alpha: 0.7), base),
+      a,
     ],
   );
 }

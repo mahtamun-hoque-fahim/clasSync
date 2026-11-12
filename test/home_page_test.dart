@@ -149,43 +149,32 @@ void main() {
     ));
     await tester.pump();
 
-    Color? fill(String text) => tester
-        .widget<Material>(
-          find.ancestor(of: find.text(text), matching: find.byType(Material))
-              .first,
-        )
-        .color;
+    // Collects the gradient (if any) on each Ink around the matching text.
 
-    Gradient? gradientOf(String text) {
-      // ListTile wraps itself in an Ink with a transparent ShapeDecoration, so
-      // the gradient lives on a second Ink ancestor — pick the one that has it.
+    // The state card's title equals the course name too, so collect every
+    // Ink around each matching text and assert on the set.
+    List<Gradient?> gradientsOf(String text) {
       final inks = find.ancestor(of: find.text(text), matching: find.byType(Ink));
-      for (final ink in tester.widgetList<Ink>(inks)) {
-        final decoration = ink.decoration;
-        if (decoration is BoxDecoration) return decoration.gradient;
-      }
-      return null;
+      return [
+        for (final ink in tester.widgetList<Ink>(inks))
+          if (ink.decoration is BoxDecoration)
+            (ink.decoration as BoxDecoration).gradient,
+      ];
     }
 
     // The live row is filled with the accent gradient, not a flat pale fill.
-    final live = liveGradient('blue');
-    expect(gradientOf('LIVE'), live);
-    expect(gradientOf('Gap'), isNull);
-    expect(fill('Gap'), Colors.transparent);
+    final scheme = buildTheme('blue').colorScheme;
+    final live = liveGradient('blue', scheme.surface);
+    expect(gradientsOf('LIVE'), contains(live));
+    expect(gradientsOf('Gap'), everyElement(isNull));
 
-    Color? card(String label) => tester
-        .widget<Card>(
-          find.ancestor(of: find.text(label), matching: find.byType(Card))
-              .first,
-        )
-        .color;
-
-    expect(card('Now'), Colors.transparent);
-    expect(gradientOf('Now'), live);
+    // The Now card carries the state gradient over the card surface.
     expect(
-      card('Next'),
-      isNot(buildTheme('blue').colorScheme.primary),
+      gradientsOf('Now'),
+      everyElement(liveGradient('blue', scheme.surfaceContainerLow)),
     );
+    // The Next card stays plain.
+    expect(gradientsOf('Next'), everyElement(isNull));
     await finish(tester);
   });
 }

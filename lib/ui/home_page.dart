@@ -7,6 +7,7 @@ import '../alerts/scheduler.dart';
 import '../data/ct_repo.dart';
 import '../data/routine_repo.dart';
 import '../model/ct.dart';
+import '../model/now_state.dart';
 import '../model/routine.dart';
 import '../model/today.dart';
 import '../theme.dart';
@@ -37,12 +38,19 @@ class _HomePageState extends State<HomePage> {
   late final Stream<Routine> _routine = widget.repo.watch();
   late final Stream<List<Ct>> _cts = widget.ctRepo.watch();
   late final Timer _clock;
+  late final StreamSubscription<List<Ct>> _ctSub;
+  List<Ct> _ctsData = const [];
 
   @override
   void initState() {
     super.initState();
     // Keeps the Now and Next cards current while the screen stays open.
     _clock = Timer.periodic(const Duration(minutes: 1), (_) => setState(() {}));
+    // The Now card reads the whole item list, so it lives at page level.
+    _ctSub = _cts.listen(
+      (cts) => setState(() => _ctsData = cts),
+      onError: (_) {},
+    );
     _askForPermissions();
   }
 
@@ -76,6 +84,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _clock.cancel();
+    _ctSub.cancel();
     super.dispose();
   }
 
@@ -95,48 +104,45 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _ctSection() {
-    return StreamBuilder<List<Ct>>(
-      stream: _cts,
-      builder: (context, snapshot) {
-        // The list can outlive a CT's time while this screen stays open.
-        final now = DateTime.now();
-        final cts = (snapshot.data ?? const <Ct>[])
-            .where((ct) => ct.at.isAfter(now))
-            .toList();
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Upcoming CTs',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: _editCt,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add CT'),
-                  ),
-                ],
-              ),
-            ),
-            for (final ct in cts)
-              Card(
-                child: ListTile(
-                  title: Text(
-                    ct.room == null ? ct.course : '${ct.course} · ${ct.room}',
-                  ),
-                  subtitle: Text(formatCtTime(ct.at)),
-                  onTap: () => _editCt(ct),
+    final now = DateTime.now();
+    final cts = _ctsData
+        .where((ct) => ct.at.isAfter(now))
+        .toList()
+      ..sort((a, b) => a.at.compareTo(b.at));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Upcoming CTs',
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
-          ],
-        );
-      },
+              TextButton.icon(
+                onPressed: _editCt,
+                icon: const Icon(Icons.add),
+                label: const Text('Add CT'),
+              ),
+            ],
+          ),
+        ),
+        for (final ct in cts)
+          Card(
+            child: ListTile(
+              title: Text(
+                ct.room == null ? ct.course : '${ct.course} · ${ct.room}',
+              ),
+              subtitle: Text(
+                '${ctKindLabel(ct.kind)} · ${formatCtTime(ct.at)}',
+              ),
+              onTap: () => _editCt(ct),
+            ),
+          ),
+      ],
     );
   }
 
@@ -177,22 +183,17 @@ class _HomePageState extends State<HomePage> {
           }
           final now = DateTime.now();
           final t = today(r, now);
+          // The Now card walks the full state timeline: class, lab,
+          // homecoming, home, incoming, day off, near, exam countdown.
+          final state = nowState(r, _ctsData, now);
           return ListView(
             padding: const EdgeInsets.all(12),
             children: [
-              _SlotCard(
-                label: 'Now',
-                slot: t.now,
-                empty: 'No class now',
-                // Always filled with the accent gradient, live or not.
-                live: true,
-                accent: r.accent,
-              ),
+              _StateCard(state: state, accent: r.accent),
               _SlotCard(
                 label: 'Next',
                 slot: t.next,
                 empty: t.isClassDay ? 'No more classes today' : 'No classes today',
-                accent: r.accent,
               ),
               _ctSection(),
               if (t.isClassDay) ...[
@@ -246,7 +247,14 @@ class _TodayRow extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: Ink(
-        decoration: live ? BoxDecoration(gradient: liveGradient(accent)) : null,
+        decoration: live
+            ? BoxDecoration(
+                gradient: liveGradient(
+                  accent,
+                  Theme.of(context).colorScheme.surface,
+                ),
+              )
+            : null,
         child: ListTile(
           textColor: ink,
           iconColor: ink,
@@ -272,21 +280,86 @@ class _TodayRow extends StatelessWidget {
   }
 }
 
+/// The Now card, rebuilt on the reference: the whole card carries the accent
+/// gradient (70% alpha over the surface melting into the full accent), the
+/// state's white-gradient icon on the right, and the state's title and
+/// subtitle on the left. Every state - class, lab, homecoming, home,
+/// incoming, night before, day off, near, exam countdown - renders here.
+class _StateCard extends StatelessWidget {
+  final NowState state;
+  final String accent;
+
+  const _StateCard({required this.state, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    final fill = accentFill(accent);
+    final ink = inkOnAccent(fill);
+    // The card's own surface is explicit, so the gradient's 70% top stop
+    // composites over exactly the tone the card sits on.
+    return Card(
+      color: scheme.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      child: Ink(
+        decoration: BoxDecoration(
+          gradient: liveGradient(accent, scheme.surfaceContainerLow),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: DefaultTextStyle.merge(
+                  style: TextStyle(color: ink),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Now',
+                        style: text.labelMedium?.copyWith(
+                          color: ink.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        state.title,
+                        style: text.titleLarge?.copyWith(color: ink),
+                      ),
+                      Text(
+                        state.subtitle,
+                        style: text.bodyMedium?.copyWith(
+                          color: ink.withValues(alpha: 0.85),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Image.asset(
+                'assets/icons/png/${state.icon}.png',
+                width: 56,
+                height: 56,
+                fit: BoxFit.contain,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SlotCard extends StatelessWidget {
   final String label, empty;
   final Slot? slot;
-  final String accent;
-
-  /// True when this card must be filled with the accent gradient. The Now
-  /// card passes true always; the Next card only when it shows the next class.
-  final bool live;
 
   const _SlotCard({
     required this.label,
     required this.slot,
     required this.empty,
-    required this.accent,
-    this.live = false,
   });
 
   @override
@@ -295,37 +368,24 @@ class _SlotCard extends StatelessWidget {
     final text = theme.textTheme;
     final slot = this.slot;
     final tough = slot?.cell.tough ?? false;
-    // The Now card is always filled with the accent gradient, no matter what
-    // state it is in - no class, gap, or tough class. The Next card stays plain.
-    final highlight = live;
-    final ink = highlight ? inkOnAccent(accentFill(accent)) : null;
     return Card(
-      color: highlight ? Colors.transparent : null,
       clipBehavior: Clip.antiAlias,
-      child: Ink(
-        decoration:
-            highlight ? BoxDecoration(gradient: liveGradient(accent)) : null,
-        child: DefaultTextStyle.merge(
-          style: ink == null ? null : TextStyle(color: ink),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: double.infinity,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label),
-                  const SizedBox(height: 4),
-                  Text(
-                    slot?.cell.label ?? empty,
-                    style: text.titleLarge?.copyWith(color: ink),
-                  ),
-                  if (slot != null)
-                    Text('${slot.period.start}–${slot.period.end}'),
-                  if (tough) const Text('Snacks before the class.'),
-                ],
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label),
+              const SizedBox(height: 4),
+              Text(
+                slot?.cell.label ?? empty,
+                style: text.titleLarge,
               ),
-            ),
+              if (slot != null) Text('${slot.period.start}–${slot.period.end}'),
+              if (tough) const Text('Snacks before the class.'),
+            ],
           ),
         ),
       ),
