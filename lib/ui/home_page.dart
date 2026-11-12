@@ -184,7 +184,8 @@ class _HomePageState extends State<HomePage> {
                 label: 'Now',
                 slot: t.now,
                 empty: 'No class now',
-                live: t.now != null,
+                // Always filled with the accent gradient, live or not.
+                live: true,
               ),
               _SlotCard(
                 label: 'Next',
@@ -290,7 +291,8 @@ class _SlotCard extends StatelessWidget {
   final String label, empty;
   final Slot? slot;
 
-  /// True when this card is showing the class that is running right now.
+  /// True when this card must be filled with the accent gradient. The Now
+  /// card passes true always; the Next card only when it shows the next class.
   final bool live;
 
   const _SlotCard({
@@ -306,13 +308,13 @@ class _SlotCard extends StatelessWidget {
     final text = theme.textTheme;
     final slot = this.slot;
     final tough = slot?.cell.tough ?? false;
-    // A tough class keeps its amber; that reads the same on any accent.
-    final highlight = live && !tough;
+    // The Now card is always filled with the accent gradient, no matter what
+    // state it is in - no class, gap, or tough class. The Next card stays plain.
+    final highlight = live;
     final onHighlight = theme.colorScheme.onPrimary;
-    final colour = tough ? toughColor : null;
-    final ink = tough ? Colors.black : (highlight ? onHighlight : null);
+    final ink = highlight ? onHighlight : null;
     return Card(
-      color: highlight ? Colors.transparent : colour,
+      color: highlight ? Colors.transparent : null,
       clipBehavior: Clip.antiAlias,
       child: Ink(
         decoration: highlight
