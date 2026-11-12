@@ -34,6 +34,7 @@ class _CtEditorState extends State<_CtEditor> {
   late final _room = TextEditingController(text: widget.initial?.room);
   late final _note = TextEditingController(text: widget.initial?.note);
   late DateTime _at = widget.initial?.at ?? _tomorrowMorning();
+  late String _kind = widget.initial?.kind ?? 'ct';
   late final Set<int> _reminders = {...?widget.initial?.remindBefore}.isNotEmpty
       ? {...widget.initial!.remindBefore}
       : {..._defaults};
@@ -144,6 +145,7 @@ class _CtEditorState extends State<_CtEditor> {
       at: _at,
       room: room.isEmpty ? null : room,
       note: note.isEmpty ? null : note,
+      kind: _kind,
       remindBefore: _reminders.toList()..sort((a, b) => b.compareTo(a)),
     )));
   }
@@ -153,7 +155,11 @@ class _CtEditorState extends State<_CtEditor> {
     final error = TextStyle(color: Theme.of(context).colorScheme.error);
     final chips = {..._presets, ..._reminders}.toList()..sort();
     return AlertDialog(
-      title: Text(widget.initial == null ? 'Add CT' : 'Edit CT'),
+      title: Text(
+        widget.initial == null
+            ? 'Add ${ctKindLabel(_kind)}'
+            : 'Edit ${ctKindLabel(widget.initial!.kind)}',
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -168,6 +174,18 @@ class _CtEditorState extends State<_CtEditor> {
                     ? 'Required'
                     : null,
               ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final kind in ctKinds)
+                  ChoiceChip(
+                    label: Text(ctKindLabel(kind)),
+                    selected: _kind == kind,
+                    onSelected: (_) => setState(() => _kind = kind),
+                  ),
+              ],
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
