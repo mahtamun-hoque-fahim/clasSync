@@ -585,6 +585,14 @@ class _ExamDialogState extends State<_ExamDialog> {
 
   DateTime get _dateValue => _date == null ? DateTime.now() : DateTime.parse(_date!);
 
+  /// Friday and Saturday never hold an exam.
+  bool get _dateForbidden {
+    final date = _date;
+    if (date == null) return false;
+    final weekday = DateTime.parse(date).weekday;
+    return weekday == DateTime.friday || weekday == DateTime.saturday;
+  }
+
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -641,6 +649,14 @@ class _ExamDialogState extends State<_ExamDialog> {
                 padding: EdgeInsets.only(top: 8),
                 child: Text('Pick a date.'),
               ),
+            if (_dateForbidden)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'Exams are never held on Friday or Saturday. Pick another day.',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
             const SizedBox(height: 8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
@@ -675,7 +691,10 @@ class _ExamDialogState extends State<_ExamDialog> {
         FilledButton(
           onPressed: () {
             final course = courses.isEmpty ? _courseField.text.trim() : _course;
-            if (course == null || course.isEmpty || _date == null) {
+            if (course == null ||
+                course.isEmpty ||
+                _date == null ||
+                _dateForbidden) {
               setState(() => _showErrors = true);
               return;
             }
@@ -726,9 +745,23 @@ class _ExamsImportDialogState extends State<_ExamsImportDialog> {
       return;
     }
     final exams = <Exam>[];
+    final forbidden = <String>[];
     for (final entry in raw) {
       final exam = Exam.tryFromJson(entry);
-      if (exam != null) exams.add(exam);
+      if (exam == null) continue;
+      final weekday = DateTime.parse(exam.date).weekday;
+      if (weekday == DateTime.friday || weekday == DateTime.saturday) {
+        forbidden.add(exam.date);
+        continue;
+      }
+      exams.add(exam);
+    }
+    if (forbidden.isNotEmpty) {
+      setState(() => _errors = [
+            'Exams are never held on Friday or Saturday: '
+                '${forbidden.toSet().join(', ')}.',
+          ]);
+      return;
     }
     if (exams.isEmpty) {
       setState(

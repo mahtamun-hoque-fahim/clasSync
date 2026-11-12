@@ -32,15 +32,16 @@ class NowState {
 
 /// A merged run of adjacent periods holding the same class, matching how
 /// build_alerts merges lab blocks: one unbroken slot, first period's start.
-class _Slot {
+class NowSlot {
   final Period period;
   final ClassCell cell;
-  const _Slot(this.period, this.cell);
+  const NowSlot(this.period, this.cell);
 }
 
-List<_Slot> _slots(Routine r, String day) {
+/// The day's merged class slots, in period order.
+List<NowSlot> daySlots(Routine r, String day) {
   final row = r.row(day);
-  final out = <_Slot>[];
+  final out = <NowSlot>[];
   for (var i = 0; i < row.length; i++) {
     final cell = row[i];
     if (cell == null) continue;
@@ -49,12 +50,12 @@ List<_Slot> _slots(Routine r, String day) {
     if (last != null &&
         last.period.endMinute == period.startMinute &&
         last.cell.sameClass(cell)) {
-      out[out.length - 1] = _Slot(
+      out[out.length - 1] = NowSlot(
         Period(last.period.start, period.end),
         last.cell,
       );
     } else {
-      out.add(_Slot(period, cell));
+      out.add(NowSlot(period, cell));
     }
   }
   return out;
@@ -73,7 +74,9 @@ Ct? _nextItem(List<Ct> items, DateTime now) {
   return best;
 }
 
-DateTime _examStart(Routine r, Exam e, DateTime now) {
+/// The exam's absolute start moment: its date at its own time, or the
+/// routine's shared exam time.
+DateTime examStart(Routine r, Exam e, DateTime now) {
   final date = DateTime.parse(e.date);
   final time = e.time ?? r.examTime;
   return DateTime(
@@ -86,7 +89,7 @@ DateTime _examStart(Routine r, Exam e, DateTime now) {
 }
 
 /// Subtitle parts for a class slot: teacher, room, time range.
-String _slotSubtitle(_Slot s) => [
+String _slotSubtitle(NowSlot s) => [
       if (s.cell.teacher.isNotEmpty) s.cell.teacher,
       s.cell.room,
       '${s.period.start}-${s.period.end}',
@@ -110,7 +113,7 @@ NowState nowState(Routine r, List<Ct> items, DateTime now) {
 
 NowState _classMode(Routine r, List<Ct> items, DateTime now) {
   final day = _dayName(now);
-  final slots = _slots(r, day);
+  final slots = daySlots(r, day);
   final minute = _minuteOf(now);
 
   if (r.days.contains(day)) {
@@ -174,10 +177,10 @@ String? _incomingLabel(List<Ct> items, DateTime now, {required int maxDays}) {
 bool _tomorrowIsDayOff(Routine r, DateTime now) {
   final tomorrow = _dayNames[now.weekday % 7];
   if (!r.days.contains(tomorrow)) return true;
-  return _slots(r, tomorrow).isEmpty;
+  return daySlots(r, tomorrow).isEmpty;
 }
 
-NowState _classNow(_Slot s) => _isLab(s.cell.course)
+NowState _classNow(NowSlot s) => _isLab(s.cell.course)
     ? NowState('lab', s.cell.course, _slotSubtitle(s), 'testTube')
     : NowState('theory', s.cell.course, _slotSubtitle(s), 'gradCap');
 
@@ -197,7 +200,7 @@ NowState _examMode(Routine r, List<Ct> items, DateTime now) {
   // Exams from today onward, in start order; passed times drop out at midnight.
   final upcoming = <(Exam, DateTime)>[];
   for (final e in r.exams) {
-    final start = _examStart(r, e, now);
+    final start = examStart(r, e, now);
     if (!_dateOnly(start).isBefore(_dateOnly(now))) upcoming.add((e, start));
   }
   if (upcoming.isEmpty) {

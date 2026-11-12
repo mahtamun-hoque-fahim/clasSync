@@ -4,8 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../model/ct.dart';
 import '../model/routine.dart';
 import '../theme.dart';
+import 'widget_timeline.dart';
 
 /// One class rendered on the home-screen widget.
 ///
@@ -62,10 +64,11 @@ Map<String, String> _palette(ColorScheme cs, Color accent) => {
       'accent': _hex(accent),
     };
 
-/// Full snapshot: every scheduled day of the week, so the widget resolves
-/// now/next for any day without the app running. A day with no classes is
-/// included as an empty list, so "no classes today" is instant.
-Map<String, dynamic> widgetSnapshot(Routine r) {
+/// Full snapshot: the weekly class grid for the Next row, and date-keyed
+/// state timelines for the Now card, so the widget resolves every state for
+/// any day without the app running. A day with no classes is included as an
+/// empty list, so "no classes today" is instant.
+Map<String, dynamic> widgetSnapshot(Routine r, [List<Ct> cts = const []]) {
   final accent = accentFill(r.accent);
   return {
     // The widget keeps a fixed white (light) card regardless of the app's or
@@ -81,6 +84,9 @@ Map<String, dynamic> widgetSnapshot(Routine r) {
       for (final day in validDays)
         day: [for (final s in widgetSlots(r, day)) s.toJson()],
     },
+    // State timelines for the next three weeks: exam countdowns and near /
+    // incoming windows depend on real dates, so they freeze in here.
+    'timeline': widgetTimeline(r, cts),
   };
 }
 
@@ -91,7 +97,8 @@ class WidgetSync {
 
   /// Stores the snapshot and refreshes the widget; silently a no-op where the
   /// channel does not exist, e.g. the web dashboard.
-  static Future<void> push(Routine r) => _send('push', widgetSnapshot(r));
+  static Future<void> push(Routine r, [List<Ct> cts = const []]) =>
+      _send('push', widgetSnapshot(r, cts));
 
   /// Drops the snapshot; the widget falls back to its placeholder.
   static Future<void> clear() => _send('clear', null);

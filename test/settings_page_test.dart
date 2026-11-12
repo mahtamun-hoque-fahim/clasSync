@@ -168,7 +168,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byType(TextField),
-      '[{"course": "Math-3", "date": "2026-11-20", "time": "14:00"}]',
+      '[{"course": "Math-3", "date": "2026-11-19", "time": "14:00"}]',
     );
     await tester.tap(find.widgetWithText(FilledButton, 'Import'));
     await tester.pumpAndSettle();
@@ -177,6 +177,22 @@ void main() {
     expect(saved.exams.single.time, '14:00');
     // The mode switch itself was saved before the paste.
     expect(saved.mode, 'exam');
+  });
+
+  testWidgets('pasting a Friday exam is rejected', (tester) async {
+    await pump(tester, routine);
+    await tester.tap(find.text('Exam'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Paste exams JSON'));
+    await tester.pumpAndSettle();
+    // 2026-11-13 is a Friday.
+    await tester.enterText(
+      find.byType(TextField),
+      '[{"course": "Math-3", "date": "2026-11-13"}]',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('never held on'), findsOneWidget);
   });
 
   testWidgets('leaving vacation mode clears the vacation end', (tester) async {

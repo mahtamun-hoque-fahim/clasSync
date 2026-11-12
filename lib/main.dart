@@ -90,26 +90,26 @@ class _SignedInAppState extends State<_SignedInApp> {
   late final Stream<Routine> _routine = widget.repo.watch().asBroadcastStream();
   late final StreamSubscription<Routine> _routineAlerts;
   late final StreamSubscription<List<Ct>> _ctAlerts;
-  final _sync = AlertSync(alertScheduler.reschedule);
+  AlertSync? _sync;
   // Returning from Android settings may have granted exact alarms, which only
   // apply to alerts scheduled afterwards.
-  late final _lifecycle = AppLifecycleListener(onResume: _sync.refresh);
+  late final _lifecycle = AppLifecycleListener(onResume: _refresh);
+
+  void _refresh() => _sync?.refresh();
 
   @override
   void initState() {
     super.initState();
     _lifecycle;
-    _routineAlerts = _routine.listen(
-      (r) {
-        _sync.routine = r;
-        // Fire and forget: the widget must never delay alert sync, and a
-        // missing widget is invisible to the user.
-        WidgetSync.push(r);
-      },
-      onError: _logError,
+    // Both the alert schedule and the widget snapshot need routine + items;
+    // the widget push happens after every change (fire and forget).
+    final sync = _sync = AlertSync(
+      alertScheduler.reschedule,
+      onSynced: (r, cts) => WidgetSync.push(r, cts),
     );
+    _routineAlerts = _routine.listen((r) => sync.routine = r, onError: _logError);
     _ctAlerts = widget.ctRepo.watch().listen(
-      (cts) => _sync.cts = cts,
+      (cts) => sync.cts = cts,
       onError: _logError,
     );
   }

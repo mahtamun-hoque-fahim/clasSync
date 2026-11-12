@@ -351,6 +351,16 @@ class Routine {
     } else if (rawExams != null) {
       errors.add('"exams" must be a list.');
     }
+    // Friday and Saturday never hold an exam.
+    for (final exam in exams) {
+      final weekday = DateTime.parse(exam.date).weekday;
+      if (weekday == DateTime.friday || weekday == DateTime.saturday) {
+        errors.add(
+          '${exam.course} on ${exam.date}: exams are never held on '
+          'Friday or Saturday.',
+        );
+      }
+    }
     if (errors.isNotEmpty) return (null, errors);
 
     final examTime = json['examTime'];

@@ -6,10 +6,14 @@ import 'build_ct_alerts.dart';
 /// Keeps the latest routine and CTs, and schedules alerts from them.
 class AlertSync {
   final void Function(List<Alert>, List<CtAlert>) _schedule;
+
+  /// Called with both lists whenever either changes; the widget bridge uses
+  /// it to re-push its snapshot (states depend on the item list too).
+  final void Function(Routine routine, List<Ct> cts)? onSynced;
   Routine? _routine;
   List<Ct>? _cts;
 
-  AlertSync(this._schedule);
+  AlertSync(this._schedule, {this.onSynced});
 
   set routine(Routine value) {
     _routine = value;
@@ -27,5 +31,6 @@ class AlertSync {
     final cts = _cts;
     if (routine == null || cts == null) return;
     _schedule(buildAlerts(routine), buildCtAlerts(cts, DateTime.now()));
+    onSynced?.call(routine, cts);
   }
 }

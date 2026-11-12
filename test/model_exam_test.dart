@@ -94,7 +94,7 @@ void main() {
         'mode': 'exam',
         'examTime': '10:00',
         'exams': [
-          {'course': 'Math-3', 'date': '2026-11-20'},
+          {'course': 'Math-3', 'date': '2026-11-19'},
           {'course': 'DLD', 'date': '2026-11-23', 'time': '14:30'},
         ],
       });
@@ -120,6 +120,36 @@ void main() {
       expect(cleared.mode, 'class');
     });
 
+    test('exams are never held on Friday or Saturday', () {
+      // 2026-11-13 is a Friday, 2026-11-14 a Saturday.
+      for (final date in const ['2026-11-13', '2026-11-14']) {
+        final (bad, errors) = Routine.parse({
+          'days': ['Sun'],
+          'periods': [
+            {'start': '09:30', 'end': '10:20'},
+          ],
+          'mode': 'exam',
+          'exams': [
+            {'course': 'Math-3', 'date': date},
+          ],
+        });
+        expect(bad, isNull);
+        expect(errors.single, contains('never held on'));
+      }
+      // Weekday exams pass.
+      final (ok, errors) = Routine.parse({
+        'days': ['Sun'],
+        'periods': [
+          {'start': '09:30', 'end': '10:20'},
+        ],
+        'exams': [
+          {'course': 'Math-3', 'date': '2026-11-16'},
+        ],
+      });
+      expect(errors, isEmpty);
+      expect(ok!.exams.single.date, '2026-11-16');
+    });
+
     test('bad values fall back or fail loudly', () {
       // Unknown mode falls back to class rather than breaking the import.
       expect(_routine(const {'mode': 'chaos'}).mode, 'class');
@@ -127,7 +157,7 @@ void main() {
       final r = _routine(const {
         'mode': 'exam',
         'exams': [
-          {'course': 'Good', 'date': '2026-11-20'},
+          {'course': 'Good', 'date': '2026-11-19'},
           {'course': 'Bad', 'date': 'Nov 20'},
         ],
       });
