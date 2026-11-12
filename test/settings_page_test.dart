@@ -149,4 +149,44 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('"DLD Lab"'), findsOneWidget);
   });
+
+  testWidgets('switching to exam mode reveals the exam controls',
+      (tester) async {
+    final repo = await pump(tester, routine);
+    await tester.tap(find.text('Exam'));
+    await tester.pump();
+    expect(repo.saved!.mode, 'exam');
+    expect(find.text('Exam start time'), findsOneWidget);
+    expect(find.text('Add exam'), findsOneWidget);
+  });
+
+  testWidgets('pasting exams JSON saves the exams', (tester) async {
+    final repo = await pump(tester, routine);
+    await tester.tap(find.text('Exam'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Paste exams JSON'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextField),
+      '[{"course": "Math-3", "date": "2026-11-20", "time": "14:00"}]',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Import'));
+    await tester.pumpAndSettle();
+    final saved = repo.saved!;
+    expect(saved.exams.single.course, 'Math-3');
+    expect(saved.exams.single.time, '14:00');
+    // The mode switch itself was saved before the paste.
+    expect(saved.mode, 'exam');
+  });
+
+  testWidgets('leaving vacation mode clears the vacation end', (tester) async {
+    final repo = await pump(
+      tester,
+      routine.copyWith(mode: 'vacation', vacationEnd: '2026-11-30'),
+    );
+    await tester.tap(find.text('Class'));
+    await tester.pump();
+    expect(repo.saved!.mode, 'class');
+    expect(repo.saved!.vacationEnd, isNull);
+  });
 }
