@@ -55,6 +55,18 @@ Execute automatically at the start of every session, before the first commit —
 
 ## Session Log
 
+### 2026-11-13 (ink + release session)
+- By: GLM-5.3-Flash Free (OpenCode)
+- Did: Cut the first GitHub release **v1.0.0** through the REST API (gh is not installed; the token comes from `git credential fill`): composed release notes from the git-log sessions, and synced the repo About description. Tag matches `pubspec.yaml`'s `version: 1.0.0+1`.
+- Did: Added `.github/workflows/release.yml` - every `v*` tag push now gets a GitHub Release with auto-generated notes, and it **skips when the release already exists**, so manual cuts (like this one) and automatic ones never collide. Verified live: the API-created v1.0.0 tag fired the workflow, it saw the existing release and exited success.
+- Did: Root-caused the gray widget title, from the user's "texts were pure black" report. `headline()` only applied the ink `ForegroundColorSpan` when a room tail existed, so tail-less states (Day Off, Home, exams) fell back to the TextView's theme default - measured **exactly #808080** on device while label and subtitle were black. The title's ink span is now always set.
+- Did: Pinned the widget ink to **pure black `#000000`** at the source: the snapshot palette ships `'onBg': '#000000'` instead of M3's `onSurface` (`#1B1B1F`), and the fallback `widget_on_bg` color resource matches. No derived grays, no alpha tints - the card is locked white, the reference text is pure black.
+- Did: Enlarged the card type on the user's live feedback: the three lines now scale at **0.162 / 0.292 / 0.194** of the card's real placed height (label / bold title / subtitle), after two +4% steps on top of the 0.15 / 0.27 / 0.18 landing. All sizes ride `setTextViewTextSize` with the real height, so they scale with any resize.
+- Learned: A RemoteViews TextView with no explicit color (and no color span) renders the **theme-default gray**, not black - always set text colors explicitly, and always as spans when the same view carries mixed-color text.
+- Learned: Reinstalling the APK preserves SharedPreferences, so a palette change in the snapshot does **not** reach the widget until the app runs again and re-pushes the snapshot - launch the app once after changing `widget_sync.dart`.
+- Committed: `4272ec4` release workflow, `65cd72c` pure black ink + reference type scale, `5b00c05` type enlarged two +4% steps. `flutter analyze` clean, all 179 tests pass; release APK installed, all three lines verified **darkest=0** (pure black) on device.
+- Open: The type scale is a moving dial right now - "more" steps +4% each; pin it when the user calls it. Picker preview still shows the old NOW/NEXT design (needs `tool/widget_preview.js` re-run). Live-class and exam-countdown states still test-suite-only on device.
+
 ### 2026-11-13 (reference-fidelity session)
 - By: GLM-5.3-Flash Free (OpenCode)
 - Did: Rebuilt the state card to the user's reference frames (`C:\Users\HP\Downloads\Untitled\Frame 12-23.png`) after a frame-by-frame comparison. `NowState` now carries (kind, label, title, tail, subtitle, icon): `label` is the small first line ("Now"/"Tomorrow"/"Today"/countdown), `tail` is the accent-colored part of the headline (the room in "DLD LAB : 220"). All text is dark ink everywhere; only the tail is in the accent. App `_StateCard` and the widget render the same anatomy.
