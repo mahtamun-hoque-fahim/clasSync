@@ -8,13 +8,20 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.os.Build
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
+import android.widget.ImageView
 import android.widget.RemoteViews
 import org.json.JSONArray
 import org.json.JSONObject
@@ -123,6 +130,86 @@ class ClassWidgetProvider : AppWidgetProvider() {
             return out
         }
 
+        /** One frozen state card point: minute-of-day + the full card text. */
+        private class Point(
+            val minute: Int,
+            val title: String,
+            val subtitle: String,
+            val icon: String,
+        )
+
+        private fun parseTimeline(raw: JSONObject?): Map<String, List<Point>> {
+            if (raw == null) return emptyMap()
+            val out = mutableMapOf<String, List<Point>>()
+            val keys = raw.keys()
+            while (keys.hasNext()) {
+                val date = keys.next()
+                val list = mutableListOf<Point>()
+                val arr = raw.optJSONArray(date) ?: continue
+                for (i in 0 until arr.length()) {
+                    val o = arr.optJSONObject(i) ?: continue
+                    list.add(
+                        Point(
+                            o.optInt("m"),
+                            o.optString("t"),
+                            o.optString("s"),
+                            o.optString("i"),
+                        )
+                    )
+                }
+                out[date] = list
+            }
+            return out
+        }
+
+        /** yyyy-MM-dd of a calendar, matching the timeline keys from Dart. */
+        private fun dateKey(cal: Calendar): String {
+            fun two(v: Int) = v.toString().padStart(2, '0')
+            return "${cal.get(Calendar.YEAR)}-${two(cal.get(Calendar.MONTH) + 1)}-${two(cal.get(Calendar.DAY_OF_MONTH))}"
+        }
+
+        /** The state card active at [minute] on [date], or null. */
+        private fun pointAt(timeline: Map<String, List<Point>>, date: Calendar, minute: Int): Point? {
+            val day = timeline[dateKey(date)] ?: return null
+            return day.lastOrNull { it.minute <= minute }
+        }
+
+        /**
+         * The icon tile: the accent gradient (70% top, full accent bottom,
+         * the app's reference formula) rounded, with the state's white glyph
+         * drawn over it. One bitmap, so RemoteViews carries it whole.
+         */
+        private fun iconTile(context: Context, icon: String, accent: Int): Bitmap? {
+            val res = context.resources
+            val id = res.getIdentifier("state_$icon", "drawable", context.packageName)
+                .takeIf { it != 0 } ?: return null
+            val density = res.displayMetrics.density
+            val size = (64 * density).toInt().coerceAtLeast(1)
+            val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            val radius = size * 0.28f
+
+            val top = Color.argb((0.7f * 255).toInt(), Color.red(accent), Color.green(accent), Color.blue(accent))
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                shader = android.graphics.LinearGradient(
+                    0f, 0f, 0f, size.toFloat(),
+                    top, accent,
+                    android.graphics.Shader.TileMode.CLAMP,
+                )
+            }
+            canvas.drawRoundRect(RectF(0f, 0f, size.toFloat(), size.toFloat()), radius, radius, paint)
+
+            // The glyph keeps its own white gradient; drawn inside with padding.
+            // A plain PNG needs no AppCompat inflater, so the platform API does.
+            val glyph = context.getDrawable(id) ?: return null
+            val pad = (size * 0.18f).toInt()
+            val src = android.graphics.Rect(0, 0, glyph.intrinsicWidth, glyph.intrinsicHeight)
+            val dst = android.graphics.Rect(pad, pad, size - pad, size - pad)
+            glyph.bounds = dst
+            glyph.draw(canvas)
+            return bitmap
+        }
+
         /** "NOW" in the accent + the rest dimmer, in one line. */
         private fun labeled(label: String, rest: String, accent: Int, dim: Int): CharSequence {
             val sb = SpannableStringBuilder(label)
@@ -165,23 +252,72 @@ class ClassWidgetProvider : AppWidgetProvider() {
             // child-view updates apply fine.
             rv.setInt(R.id.widgetCard, "setBackgroundResource", R.drawable.widget_bg)
 
-            if (root == null || days == null) {
-                rv.setTextViewText(R.id.nowLine, labeled("CLASYNC", "", dim, dim))
-                rv.setTextViewText(R.id.nowMain, "Open ClasSync")
-                rv.setTextColor(R.id.nowMain, onBg)
-                rv.setTextViewText(R.id.nextLine, "")
-                rv.setViewVisibility(R.id.nextLine, android.view.View.GONE)
-            } else {
-                val now = Calendar.getInstance()
-                val minute = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
-                val slots = parseDay(days.optJSONArray(WEEK_DAY[now.get(Calendar.DAY_OF_WEEK)]))
-                val running = slots.firstOrNull { it.startMinute <= minute && minute < it.endMinute }
-                val next = slots.firstOrNull { it.startMinute > minute }
+            val timeline = runCatching {
+                parseTimeline(root?.optJSONObject("timeline"))
+            }.getOrNull() ?: emptyMap()
 
-                if (running != null) {
+            val now = Calendar.getInstance()
+            val minute = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
+            val slots = days?.let {
+                runCatching {
+                    parseDay(it.optJSONArray(WEEK_DAY[now.get(Calendar.DAY_OF_WEEK)]))
+                }.getOrNull()
+            } ?: emptyList()
+            val running = slots.firstOrNull { it.startMinute <= minute && minute < it.endMinute }
+            val next = slots.firstOrNull { it.startMinute > minute }
+            val point = pointAt(timeline, now, minute)
+
+            when {
+                // The date-keyed state card: the same states the app's Now card
+                // renders, frozen into the snapshot so no Dart is needed.
+                point != null -> {
+                    rv.setTextViewText(R.id.nowLine, labeled("NOW", "", accent, dim))
+                    rv.setTextViewText(R.id.nowMain, point.title)
+                    rv.setTextColor(R.id.nowMain, onBg)
+                    if (point.subtitle.isEmpty()) {
+                        rv.setTextViewText(R.id.stateSub, "")
+                        rv.setViewVisibility(R.id.stateSub, android.view.View.GONE)
+                    } else {
+                        rv.setTextViewText(R.id.stateSub, point.subtitle)
+                        rv.setTextColor(R.id.stateSub, dim)
+                        rv.setViewVisibility(R.id.stateSub, android.view.View.VISIBLE)
+                    }
+                    val tile = runCatching { iconTile(context, point.icon, accent) }.getOrNull()
+                    if (tile == null) {
+                        rv.setViewVisibility(R.id.stateIcon, android.view.View.GONE)
+                    } else {
+                        rv.setImageViewBitmap(R.id.stateIcon, tile)
+                        rv.setViewVisibility(R.id.stateIcon, android.view.View.VISIBLE)
+                    }
+                    // The next class later today, from the weekly grid; only
+                    // while one is running, the non-running states already
+                    // carry "Next · ..." in their subtitle.
+                    if (running != null && next != null) {
+                        val detail = listOf(next.course, next.room, next.start)
+                            .filter { it.isNotBlank() }.joinToString(" · ")
+                        rv.setTextViewText(R.id.nextLine, labeled("NEXT", detail, accent, dim))
+                        rv.setViewVisibility(R.id.nextLine, android.view.View.VISIBLE)
+                    } else {
+                        rv.setViewVisibility(R.id.nextLine, android.view.View.GONE)
+                    }
+                }
+
+                root == null || days == null -> {
+                    rv.setTextViewText(R.id.nowLine, labeled("CLASYNC", "", dim, dim))
+                    rv.setTextViewText(R.id.nowMain, "Open ClasSync")
+                    rv.setTextColor(R.id.nowMain, onBg)
+                    rv.setViewVisibility(R.id.stateSub, android.view.View.GONE)
+                    rv.setViewVisibility(R.id.stateIcon, android.view.View.GONE)
+                    rv.setTextViewText(R.id.nextLine, "")
+                    rv.setViewVisibility(R.id.nextLine, android.view.View.GONE)
+                }
+
+                running != null -> {
                     rv.setTextViewText(R.id.nowLine, labeled("NOW", "${running.start}–${running.end}", accent, dim))
                     rv.setTextViewText(R.id.nowMain, running.course)
                     rv.setTextColor(R.id.nowMain, onBg)
+                    rv.setViewVisibility(R.id.stateSub, android.view.View.GONE)
+                    rv.setViewVisibility(R.id.stateIcon, android.view.View.GONE)
                     if (next != null) {
                         val detail = listOf(next.course, next.room, next.start)
                             .filter { it.isNotBlank() }.joinToString(" · ")
@@ -190,17 +326,25 @@ class ClassWidgetProvider : AppWidgetProvider() {
                     } else {
                         rv.setViewVisibility(R.id.nextLine, android.view.View.GONE)
                     }
-                } else if (next != null) {
+                }
+
+                next != null -> {
                     rv.setTextViewText(R.id.nowLine, labeled("NEXT", next.start, accent, dim))
                     rv.setTextViewText(R.id.nowMain, next.course)
                     rv.setTextColor(R.id.nowMain, onBg)
+                    rv.setViewVisibility(R.id.stateSub, android.view.View.GONE)
+                    rv.setViewVisibility(R.id.stateIcon, android.view.View.GONE)
                     rv.setTextViewText(R.id.nextLine, "")
                     rv.setViewVisibility(R.id.nextLine, android.view.View.GONE)
-                } else {
+                }
+
+                else -> {
                     val headline = if (slots.isEmpty()) "No classes today" else "No classes left today"
                     rv.setTextViewText(R.id.nowLine, "")
                     rv.setTextViewText(R.id.nowMain, headline)
                     rv.setTextColor(R.id.nowMain, onBg)
+                    rv.setViewVisibility(R.id.stateSub, android.view.View.GONE)
+                    rv.setViewVisibility(R.id.stateIcon, android.view.View.GONE)
                     rv.setTextViewText(R.id.nextLine, "")
                     rv.setViewVisibility(R.id.nextLine, android.view.View.GONE)
                 }
@@ -236,34 +380,51 @@ class ClassWidgetProvider : AppWidgetProvider() {
             date.timeInMillis + minuteOfDay * 60_000L
 
         /**
-         * Picks the next moment the widget changes appearance: every class
-         * start or end left today, otherwise the first class of the following
-         * days, otherwise a midnight re-render for the day roll.
+         * Picks the next moment the widget changes appearance: from the
+         * date-keyed timeline when the snapshot carries one (its own change
+         * points today, then each later date's first), else from the weekly
+         * grid (class starts/ends), otherwise a midnight re-render for the
+         * day roll.
          */
         private fun scheduleNext(context: Context, snapshot: String?) {
-            val days = runCatching {
-                snapshot?.let { JSONObject(it).optJSONObject("days") }
-            }.getOrNull()
-            if (days == null) return // Nothing to render until the app pushes.
+            val root = runCatching { snapshot?.let(::JSONObject) }.getOrNull()
+            val timeline = runCatching {
+                parseTimeline(root?.optJSONObject("timeline"))
+            }.getOrNull() ?: emptyMap()
 
             val base = Calendar.getInstance()
             var trigger: Long? = null
 
-            for (offset in 0 until 8) {
-                val date = dayAt(base, offset)
-                val slots = runCatching {
-                    parseDay(days.optJSONArray(WEEK_DAY[date.get(Calendar.DAY_OF_WEEK)]))
-                }.getOrNull() ?: emptyList()
-                trigger = if (slots.isEmpty()) {
-                    null
-                } else if (offset == 0) {
-                    slots.flatMap {
-                        listOf(atMinute(date, it.startMinute), atMinute(date, it.endMinute))
-                    }.filter { it > System.currentTimeMillis() }.minOrNull()
-                } else {
-                    atMinute(date, slots.first().startMinute)
+            if (timeline.isNotEmpty()) {
+                for (offset in 0 until 22) {
+                    val date = dayAt(base, offset)
+                    val day = timeline[dateKey(date)] ?: continue
+                    trigger = day
+                        .map { atMinute(date, it.minute) }
+                        .filter { it > System.currentTimeMillis() }
+                        .minOrNull()
+                    if (trigger != null) break
                 }
-                if (trigger != null) break
+            } else {
+                val days = root?.optJSONObject("days")
+                if (days == null) return // Nothing to render until the app pushes.
+
+                for (offset in 0 until 8) {
+                    val date = dayAt(base, offset)
+                    val slots = runCatching {
+                        parseDay(days.optJSONArray(WEEK_DAY[date.get(Calendar.DAY_OF_WEEK)]))
+                    }.getOrNull() ?: emptyList()
+                    trigger = if (slots.isEmpty()) {
+                        null
+                    } else if (offset == 0) {
+                        slots.flatMap {
+                            listOf(atMinute(date, it.startMinute), atMinute(date, it.endMinute))
+                        }.filter { it > System.currentTimeMillis() }.minOrNull()
+                    } else {
+                        atMinute(date, slots.first().startMinute)
+                    }
+                    if (trigger != null) break
+                }
             }
 
             // A schedule week with zero classes at all: re-render after midnight

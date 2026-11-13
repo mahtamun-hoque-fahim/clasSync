@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   Release builds shrink unreferenced resources. The notification small icon is
-  referenced from Dart (AndroidInitializationSettings('ic_status')), which the
-  shrinker cannot see, so it must be kept explicitly.
+  referenced from Dart (AndroidInitializationSettings('ic_status')) and the
+  state glyphs by name from Kotlin (getIdentifier("state_$icon", ...)), which
+  the shrinker cannot see, so both must be kept explicitly.
 -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@drawable/ic_status" />
+    tools:keep="@drawable/ic_status,@drawable/state_grad_cap,@drawable/state_test_tube,@drawable/state_bus,@drawable/state_home,@drawable/state_home_alert,@drawable/state_plane_take_off,@drawable/state_plane_take_off1,@drawable/state_plane,@drawable/state_clipboard48,@drawable/state_clipboard_arrow,@drawable/state_clipboard_check" />
