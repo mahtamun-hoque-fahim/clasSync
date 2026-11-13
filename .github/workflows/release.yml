@@ -1,0 +1,29 @@
+# Every tag push (v*) gets a GitHub Release with auto-generated notes.
+# Runs on tag push, skips silently if the release already exists (e.g. it
+# was cut manually first), so manual and automatic releases never collide.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create the release (skip if it already exists)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --json id -q .id 2>/dev/null; then
+            echo "Release $GITHUB_REF_NAME already exists; nothing to do."
+            exit 0
+          fi
+          gh release create "$GITHUB_REF_NAME" \
+            --generate-notes \
+            --title "$GITHUB_REF_NAME"
