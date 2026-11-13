@@ -317,22 +317,27 @@ class _StateCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Now',
+                        state.label,
                         style: text.labelMedium?.copyWith(
                           color: ink.withValues(alpha: 0.8),
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        state.title,
+                      Text.rich(
+                        TextSpan(children: [
+                          TextSpan(text: state.title),
+                          if (state.tail.isNotEmpty)
+                            TextSpan(text: ' : ${state.tail}'),
+                        ]),
                         style: text.titleLarge?.copyWith(color: ink),
                       ),
-                      Text(
-                        state.subtitle,
-                        style: text.bodyMedium?.copyWith(
-                          color: ink.withValues(alpha: 0.85),
+                      if (state.subtitle.isNotEmpty)
+                        Text(
+                          state.subtitle,
+                          style: text.bodyMedium?.copyWith(
+                            color: ink.withValues(alpha: 0.85),
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),

@@ -21,13 +21,23 @@ int _calendarDays(DateTime from, DateTime to) =>
 bool _isLab(String course) => course.toLowerCase().contains('lab');
 
 /// One full card state: what the app's Now card and the home-screen widget
-/// both render. [kind] is a stable id for styling and tests, [icon] is an
-/// asset key from `assets/icons`.
+/// both render, as the reference layout's three lines. [label] is the small
+/// first line ("Now", "Tomorrow", "Today", a countdown), [title] the big
+/// bold line and [tail] its accent-colored part (the room in
+/// "DLD LAB : 220"), [subtitle] the third line. [icon] is an asset key from
+/// `assets/icons`.
 class NowState {
   final String kind;
-  final String title, subtitle, icon;
+  final String label, title, tail, subtitle, icon;
 
-  const NowState(this.kind, this.title, this.subtitle, this.icon);
+  const NowState(
+    this.kind,
+    this.label,
+    this.title,
+    this.subtitle,
+    this.icon, {
+    this.tail = '',
+  });
 }
 
 /// A merged run of adjacent periods holding the same class, matching how
@@ -88,12 +98,12 @@ DateTime examStart(Routine r, Exam e, DateTime now) {
   );
 }
 
-/// Subtitle parts for a class slot: teacher, room, time range.
-String _slotSubtitle(NowSlot s) => [
-      if (s.cell.teacher.isNotEmpty) s.cell.teacher,
-      s.cell.room,
-      '${s.period.start}-${s.period.end}',
-    ].join(' · ');
+/// The exam card's third line: the date as dd-MM-yy ("30-02-26").
+String _examDate(Exam e) {
+  final d = DateTime.parse(e.date);
+  String two(int v) => v.toString().padLeft(2, '0');
+  return '${two(d.day)}-${two(d.month)}-${two(d.year % 100)}';
+}
 
 /// The full state for one moment, shared by the app's Now card and the
 /// widget. Class mode walks the class-day timeline (theory/lab -> homecoming
@@ -118,20 +128,24 @@ NowState _classMode(Routine r, List<Ct> items, DateTime now) {
 
   if (r.days.contains(day)) {
     // A class running right now.
-    for (final s in slots) {
+    for (var i = 0; i < slots.length; i++) {
+      final s = slots[i];
       if (s.period.startMinute <= minute && minute < s.period.endMinute) {
-        return _classNow(s);
+        return _classNow(s, i + 1 < slots.length ? slots[i + 1] : null);
       }
     }
     // Classes still ahead today: show the next one.
     final next = slots.where((s) => s.period.startMinute > minute).toList();
     if (next.isNotEmpty) {
       final s = next.first;
+      final isLab = _isLab(s.cell.course);
       return NowState(
-        _isLab(s.cell.course) ? 'lab' : 'theory',
+        isLab ? 'lab' : 'theory',
+        'Now',
         s.cell.course,
-        'Next · ${_slotSubtitle(s)}',
-        _isLab(s.cell.course) ? 'test_tube' : 'grad_cap',
+        'Starts ${s.period.start}',
+        isLab ? 'test_tube' : 'grad_cap',
+        tail: s.cell.room,
       );
     }
     // All of today's classes are over: homecoming, then home.
@@ -139,12 +153,12 @@ NowState _classMode(Routine r, List<Ct> items, DateTime now) {
       final lastEnd = slots.last.period.endMinute;
       final sinceEnd = minute - lastEnd;
       if (sinceEnd < _homecomingMinutes) {
-        return const NowState('homecoming', 'Spider Man', 'Homecoming', 'bus');
+        return const NowState('homecoming', 'Now', 'Spider Man', 'Homecoming', 'bus');
       }
       // Home. An item today (later) or tomorrow becomes the card's subtitle.
       final incoming = _incomingLabel(items, now, maxDays: 1);
       if (incoming != null) {
-        return NowState('incoming', 'Sweet Home', '$incoming Incoming', 'home_alert');
+        return NowState('incoming', 'Now', 'Home', '$incoming Incoming', 'home_alert');
       }
       // Three hours into home on the eve of a day off: tomorrow's card.
       if (_tomorrowIsDayOff(r, now) &&
@@ -152,11 +166,12 @@ NowState _classMode(Routine r, List<Ct> items, DateTime now) {
         return const NowState(
           'nightBefore',
           'Tomorrow',
-          'Day Off · Take a deep breath',
+          'Day Off',
+          'Take a deep breath',
           'plane_take_off',
         );
       }
-      return const NowState('home', 'Sweet Home', 'Home', 'home');
+      return const NowState('home', 'Now', 'Home', 'Sweet Home', 'home');
     }
   }
   // Not a class day (or a class day with no classes in the grid): day off.
@@ -180,18 +195,33 @@ bool _tomorrowIsDayOff(Routine r, DateTime now) {
   return daySlots(r, tomorrow).isEmpty;
 }
 
-NowState _classNow(NowSlot s) => _isLab(s.cell.course)
-    ? NowState('lab', s.cell.course, _slotSubtitle(s), 'test_tube')
-    : NowState('theory', s.cell.course, _slotSubtitle(s), 'grad_cap');
+/// The class running now, with the next class as the card's third line.
+NowState _classNow(NowSlot s, NowSlot? next) {
+  final isLab = _isLab(s.cell.course);
+  return NowState(
+    isLab ? 'lab' : 'theory',
+    'Now',
+    s.cell.course,
+    next == null ? '' : 'Next : ${next.cell.course} . ${next.cell.room}',
+    isLab ? 'test_tube' : 'grad_cap',
+    tail: s.cell.room,
+  );
+}
 
 // --- day off --------------------------------------------------------------
 
 NowState _dayOffState(List<Ct> items, DateTime now) {
   final next = _nextItem(items, now);
   if (next != null && _calendarDays(now, next.at) <= 2) {
-    return NowState('near', 'Day Off', '${ctKindLabel(next.kind)} Near', 'plane_take_off1');
+    return NowState(
+      'near',
+      'Now',
+      'Day Off',
+      '${ctKindLabel(next.kind)} Near',
+      'plane_take_off1',
+    );
   }
-  return const NowState('dayOff', 'Day Off', 'Relaxing', 'plane');
+  return const NowState('dayOff', 'Now', 'Day Off', 'Relaxing', 'plane');
 }
 
 // --- exam mode ------------------------------------------------------------
@@ -222,19 +252,21 @@ NowState _examMode(Routine r, List<Ct> items, DateTime now) {
     return NowState(
       'examDays',
       days == 1 ? '1 Day Left' : '$days Days Left',
-      exam.course,
+      '${exam.course} exam',
+      _examDate(exam),
       'clipboard48',
     );
   }
   if (_dateOnly(start) == _dateOnly(now)) {
     // Exam day: the card says go, no matter how many hours remain.
-    return NowState('examToday', 'Today', exam.course, 'clipboard_check');
+    return NowState('examToday', 'Today', '${exam.course} exam', _examDate(exam), 'clipboard_check');
   }
   // Under 24 hours and not the exam day yet: count in hours.
   return NowState(
     'examHours',
     '${(delta.inMinutes / 60).ceil()} Hours Left',
-    exam.course,
+    '${exam.course} exam',
+    _examDate(exam),
     'clipboard_arrow',
   );
 }

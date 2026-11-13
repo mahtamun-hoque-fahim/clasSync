@@ -48,8 +48,11 @@ void main() {
     test('theory while the first class runs', () {
       final s = nowState(r, const [], DateTime(2026, 11, 22, 9, 45));
       expect(s.kind, 'theory');
+      expect(s.label, 'Now');
       expect(s.title, 'Math-3');
-      expect(s.subtitle, 'F · 101 · 09:30-10:20');
+      expect(s.tail, '101');
+      // The lab later that day is the Next line.
+      expect(s.subtitle, 'Next : DLD LAB . 224');
       expect(s.icon, 'grad_cap');
     });
 
@@ -58,13 +61,14 @@ void main() {
       final s = nowState(r, const [], DateTime(2026, 11, 22, 11, 30));
       expect(s.kind, 'lab');
       expect(s.icon, 'test_tube');
-      expect(s.subtitle, contains('11:15-12:05'));
+      expect(s.title, 'DLD LAB');
+      expect(s.tail, '224');
     });
 
     test('before the first class shows the next class', () {
       final s = nowState(r, const [], DateTime(2026, 11, 22, 8, 0));
       expect(s.kind, 'theory');
-      expect(s.subtitle, startsWith('Next · '));
+      expect(s.subtitle, 'Starts 09:30');
     });
 
     test('homecoming runs 1.5 h after the last class ends', () {
@@ -96,7 +100,9 @@ void main() {
       final night = nowState(r, const [], DateTime(2026, 11, 23, 20, 30));
       // Mon's last class is 11:10; home starts 12:40; 3 h later is 15:40.
       expect(night.kind, 'nightBefore');
-      expect(night.title, 'Tomorrow');
+      expect(night.label, 'Tomorrow');
+      expect(night.title, 'Day Off');
+      expect(night.subtitle, 'Take a deep breath');
       expect(night.icon, 'plane_take_off');
 
       final early = nowState(r, const [], DateTime(2026, 11, 23, 15, 39));
@@ -147,8 +153,9 @@ void main() {
       );
       final s = nowState(r, const [], DateTime(2026, 11, 18, 12));
       expect(s.kind, 'examDays');
-      expect(s.title, '2 Days Left');
-      expect(s.subtitle, 'Math-3');
+      expect(s.label, '2 Days Left');
+      expect(s.title, 'Math-3 exam');
+      expect(s.subtitle, '20-11-26');
       expect(s.icon, 'clipboard48');
     });
 
@@ -159,7 +166,9 @@ void main() {
       );
       final s = nowState(r, const [], DateTime(2026, 11, 18, 20));
       expect(s.kind, 'examHours');
-      expect(s.title, '14 Hours Left');
+      expect(s.label, '14 Hours Left');
+      expect(s.title, 'Math-3 exam');
+      expect(s.subtitle, '19-11-26');
       expect(s.icon, 'clipboard_arrow');
     });
 
@@ -170,7 +179,9 @@ void main() {
       );
       final s = nowState(r, const [], DateTime(2026, 11, 19, 8));
       expect(s.kind, 'examToday');
-      expect(s.title, 'Today');
+      expect(s.label, 'Today');
+      expect(s.title, 'Math-3 exam');
+      expect(s.subtitle, '19-11-26');
       expect(s.icon, 'clipboard_check');
     });
 
@@ -207,7 +218,7 @@ void main() {
       // Wed would be a relaxing Day Off in class mode; exam mode counts.
       final s = nowState(r, const [], DateTime(2026, 11, 23, 12));
       expect(s.kind, 'examDays');
-      expect(s.title, '2 Days Left');
+      expect(s.label, '2 Days Left');
     });
 
     test('exam mode with nothing entered falls back to class states', () {
