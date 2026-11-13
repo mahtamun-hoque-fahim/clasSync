@@ -2,9 +2,10 @@
 <!-- The themed card lives on an inner view, not the layout root: the MIUI
      host ignores runtime background changes on the RemoteViews root and keeps
      the initial-layout background, so the root stays transparent and only
-     widgetCard is swapped (light/dark) from code. Reference layout: white
-     panel with the state text on the left, the accent-gradient icon tile on
-     the right (drawn as one bitmap from code, so the accent follows the app).
+     widgetCard is swapped (light/dark) from code. Reference layout: a white
+     text panel on the left (three lines, all dark ink) and the accent-gradient
+     state panel filling the card's full height on the right (one bitmap from
+     code, so the accent follows the app and the right corners stay rounded).
      Colors are set from code so they come from the widget snapshot. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widgetRoot"
@@ -16,20 +17,21 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:background="@drawable/widget_bg"
-        android:paddingStart="18dp"
-        android:paddingEnd="14dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="12dp">
+        android:background="@drawable/widget_bg">
 
+        <!-- The text column takes 65% of the card (reference grid), the
+             panel 35%, so the split holds at any placed width. -->
         <LinearLayout
             android:id="@+id/widgetText"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:layout_weight="65"
             android:orientation="vertical"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:paddingStart="21dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp">
 
             <TextView
                 android:id="@+id/nowLine"
@@ -38,7 +40,7 @@
                 android:textSize="13sp"
                 android:singleLine="true"
                 android:ellipsize="end"
-                android:text="NOW" />
+                android:text="Open ClasSync" />
 
             <TextView
                 android:id="@+id/nowMain"
@@ -49,7 +51,7 @@
                 android:textStyle="bold"
                 android:singleLine="true"
                 android:ellipsize="end"
-                android:text="Open ClasSync" />
+                android:text="" />
 
             <TextView
                 android:id="@+id/stateSub"
@@ -72,11 +74,15 @@
                 android:text="NEXT" />
         </LinearLayout>
 
+        <!-- The state panel: full card height, 35% of the width, its bitmap
+             drawn from code at exactly this size (right corners rounded like
+             the card's). -->
         <ImageView
             android:id="@+id/stateIcon"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:layout_marginStart="10dp"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="35"
+            android:scaleType="fitXY"
             android:contentDescription="@string/widget_state_icon"
             android:src="@android:color/transparent" />
     </LinearLayout>

@@ -44,6 +44,18 @@ class ClassWidgetProvider : AppWidgetProvider() {
         refresh(context)
     }
 
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        manager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: android.os.Bundle,
+    ) {
+        super.onAppWidgetOptionsChanged(context, manager, appWidgetId, newOptions)
+        // The panel bitmap is drawn at the widget's real size so its rounded
+        // corners meet the card's corners; a resize must re-render.
+        refresh(context)
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         // Covers BOOT_COMPLETED, MY_PACKAGE_REPLACED and [ACTION_REFRESH];
@@ -83,16 +95,29 @@ class ClassWidgetProvider : AppWidgetProvider() {
             refresh(context)
         }
 
-        private fun widgetIds(context: Context): IntArray =
-            AppWidgetManager.getInstance(context).getAppWidgetIds(
+        private fun refresh(context: Context) {
+            val manager = AppWidgetManager.getInstance(context)
+            val ids = manager.getAppWidgetIds(
                 ComponentName(context, ClassWidgetProvider::class.java)
             )
-
-        private fun refresh(context: Context) {
-            val ids = widgetIds(context)
             if (ids.isEmpty()) return
             val snapshot = prefs(context).getString(SNAPSHOT_KEY, null)
-            AppWidgetManager.getInstance(context).updateAppWidget(ids, buildViews(context, snapshot))
+            val density = context.resources.displayMetrics.density
+            // Each id renders at its own real placed size: the panel bitmap is
+            // drawn exactly that big, so its baked corner radius meets the
+            // card's 22dp corners with no fitXY distortion. MIUI hosts resize
+            // widgets away from the nominal 250x180dp, so options win.
+            for (id in ids) {
+                val options = manager.getAppWidgetOptions(id)
+                val widthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+                    .takeIf { it > 0 } ?: 250
+                val heightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
+                    .takeIf { it > 0 } ?: 180
+                manager.updateAppWidget(
+                    id,
+                    buildViews(context, snapshot, widthDp.toFloat(), heightDp.toFloat(), density),
+                )
+            }
             scheduleNext(context, snapshot)
         }
 
@@ -133,7 +158,9 @@ class ClassWidgetProvider : AppWidgetProvider() {
         /** One frozen state card point: minute-of-day + the full card text. */
         private class Point(
             val minute: Int,
+            val label: String,
             val title: String,
+            val tail: String,
             val subtitle: String,
             val icon: String,
         )
@@ -151,7 +178,9 @@ class ClassWidgetProvider : AppWidgetProvider() {
                     list.add(
                         Point(
                             o.optInt("m"),
+                            o.optString("l"),
                             o.optString("t"),
+                            o.optString("x"),
                             o.optString("s"),
                             o.optString("i"),
                         )
@@ -175,39 +204,81 @@ class ClassWidgetProvider : AppWidgetProvider() {
         }
 
         /**
-         * The icon tile: the accent gradient (70% top, full accent bottom,
-         * the app's reference formula) rounded, with the state's white glyph
-         * drawn over it. One bitmap, so RemoteViews carries it whole.
+         * The state panel: the accent gradient (70% top, full accent bottom,
+         * the app's reference formula) filling the card's full height, flush
+         * to its right edge, rounded on the right corners like the card
+         * itself, with the state's glyph centered large inside. One bitmap,
+         * so RemoteViews carries it whole. Drawn at the widget's real placed
+         * size, so the bitmap's corner radius matches the card's exactly.
          */
-        private fun iconTile(context: Context, icon: String, accent: Int): Bitmap? {
+        private fun iconPanel(
+            context: Context,
+            icon: String,
+            accent: Int,
+            panelWidthPx: Float,
+            heightPx: Float,
+            density: Float,
+        ): Bitmap? {
             val res = context.resources
             val id = res.getIdentifier("state_$icon", "drawable", context.packageName)
                 .takeIf { it != 0 } ?: return null
-            val density = res.displayMetrics.density
-            val size = (64 * density).toInt().coerceAtLeast(1)
-            val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            val width = panelWidthPx.toInt().coerceAtLeast(1)
+            val height = heightPx.toInt().coerceAtLeast(1)
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bitmap)
-            val radius = size * 0.28f
+            // The card's visible corner radius: MIUI's launcher re-renders the
+            // widget's background drawable at 0.75x its declared radius
+            // (measured on the device: 22dp -> 33px, 16dp -> 25px, both at
+            // density 2.0), so the panel draws at 0.75x the drawable's 22dp
+            // to meet the white corner exactly.
+            val radius = 22 * 0.75f * density
 
             val top = Color.argb((0.7f * 255).toInt(), Color.red(accent), Color.green(accent), Color.blue(accent))
             val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 shader = android.graphics.LinearGradient(
-                    0f, 0f, 0f, size.toFloat(),
+                    0f, 0f, 0f, height.toFloat(),
                     top, accent,
                     android.graphics.Shader.TileMode.CLAMP,
                 )
             }
-            canvas.drawRoundRect(RectF(0f, 0f, size.toFloat(), size.toFloat()), radius, radius, paint)
+            // Right corners rounded like the card, left corners square.
+            val radii = floatArrayOf(0f, 0f, radius, radius, radius, radius, 0f, 0f)
+            val panel = android.graphics.Path().apply {
+                addRoundRect(RectF(0f, 0f, width.toFloat(), height.toFloat()), radii, android.graphics.Path.Direction.CW)
+            }
+            canvas.drawPath(panel, paint)
 
-            // The glyph keeps its own white gradient; drawn inside with padding.
-            // A plain PNG needs no AppCompat inflater, so the platform API does.
+            // The glyph keeps its own white gradient; centered, ~47% of the
+            // panel's width, matching the reference grid's proportions.
             val glyph = context.getDrawable(id) ?: return null
-            val pad = (size * 0.18f).toInt()
-            val src = android.graphics.Rect(0, 0, glyph.intrinsicWidth, glyph.intrinsicHeight)
-            val dst = android.graphics.Rect(pad, pad, size - pad, size - pad)
-            glyph.bounds = dst
+            val side = (width * 0.47f).toInt().coerceAtLeast(1)
+            val left = (width - side) / 2
+            val topPad = (height - side) / 2
+            glyph.bounds = android.graphics.Rect(left, topPad, left + side, topPad + side)
             glyph.draw(canvas)
             return bitmap
+        }
+
+        /** The card's headline: dark title, accent-colored tail after " : ". */
+        private fun headline(point: Point, accent: Int, ink: Int): CharSequence {
+            val sb = SpannableStringBuilder(point.title)
+            sb.setSpan(StyleSpan(Typeface.BOLD), 0, sb.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            if (point.tail.isNotEmpty()) {
+                val start = sb.length
+                sb.append(" : ").append(point.tail)
+                sb.setSpan(
+                    ForegroundColorSpan(accent),
+                    start, sb.length,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE,
+                )
+                sb.setSpan(
+                    StyleSpan(Typeface.BOLD),
+                    start, sb.length,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE,
+                )
+                sb.setSpan(ForegroundColorSpan(ink), 0, start, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+            return sb
         }
 
         /** "NOW" in the accent + the rest dimmer, in one line. */
@@ -222,7 +293,13 @@ class ClassWidgetProvider : AppWidgetProvider() {
             return sb
         }
 
-        private fun buildViews(context: Context, snapshot: String?): RemoteViews {
+        private fun buildViews(
+            context: Context,
+            snapshot: String?,
+            widthDp: Float = 250f,
+            heightDp: Float = 180f,
+            density: Float = context.resources.displayMetrics.density,
+        ): RemoteViews {
             val rv = RemoteViews(context.packageName, R.layout.class_widget)
 
             // The snapshot's palette comes from the app's Material 3 scheme;
@@ -271,34 +348,37 @@ class ClassWidgetProvider : AppWidgetProvider() {
                 // The date-keyed state card: the same states the app's Now card
                 // renders, frozen into the snapshot so no Dart is needed.
                 point != null -> {
-                    rv.setTextViewText(R.id.nowLine, labeled("NOW", "", accent, dim))
-                    rv.setTextViewText(R.id.nowMain, point.title)
-                    rv.setTextColor(R.id.nowMain, onBg)
+                    // The reference layout: every line in dark ink, only the
+                    // headline's tail in the accent.
+                    rv.setTextViewText(R.id.nowLine, point.label)
+                    rv.setTextColor(R.id.nowLine, onBg)
+                    rv.setTextViewText(R.id.nowMain, headline(point, accent, onBg))
                     if (point.subtitle.isEmpty()) {
                         rv.setTextViewText(R.id.stateSub, "")
                         rv.setViewVisibility(R.id.stateSub, android.view.View.GONE)
                     } else {
                         rv.setTextViewText(R.id.stateSub, point.subtitle)
-                        rv.setTextColor(R.id.stateSub, dim)
+                        rv.setTextColor(R.id.stateSub, onBg)
                         rv.setViewVisibility(R.id.stateSub, android.view.View.VISIBLE)
                     }
-                    val tile = runCatching { iconTile(context, point.icon, accent) }.getOrNull()
-                    if (tile == null) {
+                    rv.setViewVisibility(R.id.nextLine, android.view.View.GONE)
+                    // The panel at the widget's real size: 35% of the card's
+                    // width, full height (the reference grid's 65/35 split).
+                    val panel = runCatching {
+                        iconPanel(
+                            context,
+                            point.icon,
+                            accent,
+                            panelWidthPx = widthDp * 0.35f * density,
+                            heightPx = heightDp * density,
+                            density = density,
+                        )
+                    }.getOrNull()
+                    if (panel == null) {
                         rv.setViewVisibility(R.id.stateIcon, android.view.View.GONE)
                     } else {
-                        rv.setImageViewBitmap(R.id.stateIcon, tile)
+                        rv.setImageViewBitmap(R.id.stateIcon, panel)
                         rv.setViewVisibility(R.id.stateIcon, android.view.View.VISIBLE)
-                    }
-                    // The next class later today, from the weekly grid; only
-                    // while one is running, the non-running states already
-                    // carry "Next · ..." in their subtitle.
-                    if (running != null && next != null) {
-                        val detail = listOf(next.course, next.room, next.start)
-                            .filter { it.isNotBlank() }.joinToString(" · ")
-                        rv.setTextViewText(R.id.nextLine, labeled("NEXT", detail, accent, dim))
-                        rv.setViewVisibility(R.id.nextLine, android.view.View.VISIBLE)
-                    } else {
-                        rv.setViewVisibility(R.id.nextLine, android.view.View.GONE)
                     }
                 }
 

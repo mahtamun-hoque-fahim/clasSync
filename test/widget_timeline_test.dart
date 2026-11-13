@@ -48,8 +48,9 @@ void main() {
     // at 12:05 is homecoming (sinceEnd 0 < 90); it flips at +90 = 13:35.
     final sun = days['2026-11-22']!;
     // minute-of-day for 09:30 = 570.
-    final kinds = sun.map((p) => p['t']).toSet();
-    expect(kinds, containsAll(['Math-3', 'DLD LAB', 'Spider Man', 'Sweet Home']));
+    final titles = sun.map((p) => p['t']).toSet();
+    expect(titles, containsAll(['Math-3', 'DLD LAB', 'Spider Man', 'Home']));
+    expect(sun.map((p) => p['s']), contains('Sweet Home'));
     // Boundaries are sorted and start the day.
     final minutes = sun.map((p) => p['m'] as int).toList();
     expect(minutes.first, 0);
@@ -82,19 +83,20 @@ void main() {
       _routine(mode: 'exam', exams: const [Exam(course: 'Math-3', date: '2026-11-25')]),
       const [],
     );
-    // Sun 22, Mon 23, Tue 24: pure gap days, one point each.
-    expect(days['2026-11-22']!.single['t'], '3 Days Left');
-    expect(days['2026-11-23']!.single['t'], '2 Days Left');
+    // Sun 22, Mon 23, Tue 24: pure gap days, one point each. The countdown
+    // is the label; the headline stays "Math-3 exam".
+    expect(days['2026-11-22']!.single['l'], '3 Days Left');
+    expect(days['2026-11-23']!.single['l'], '2 Days Left');
     final tue = days['2026-11-24']!;
-    expect(tue.first['t'], '1 Day Left');
+    expect(tue.first['l'], '1 Day Left');
     // The last 24 h (from Tue 10:00) count hours instead.
     expect(
-      tue.map((p) => p['t']).where((t) => (t as String).contains('Hours')),
+      tue.map((p) => p['l']).where((t) => (t as String).contains('Hours')),
       isNotEmpty,
     );
     final wed = days['2026-11-25']!;
     // Exam day morning: Today; after 10:00 the class timeline shows through.
-    expect(wed.first['t'], 'Today');
+    expect(wed.first['l'], 'Today');
     expect(wed[0]['m'], 0);
     // After the exam start, a non-class day falls back to its day-off card.
     final after = wed.where((p) => (p['m'] as int) >= 600).map((p) => p['t']);
@@ -108,7 +110,7 @@ void main() {
     );
     // Wed 18th evening: exam Thu 10:00. At 20:00 -> 14 hours.
     final wed = days['2026-11-18']!;
-    final hours = wed.map((p) => p['t']).where((t) => (t as String).contains('Hours'));
+    final hours = wed.map((p) => p['l']).where((t) => (t as String).contains('Hours'));
     expect(hours, isNotEmpty);
   });
 
@@ -116,7 +118,7 @@ void main() {
     final days = widgetTimeline(_routine(), const []);
     // Mon 23rd: last class 11:10; night state at 11:10+90+180 = 15:40 = 940.
     final mon = days['2026-11-23']!;
-    final night = mon.where((p) => p['t'] == 'Tomorrow');
+    final night = mon.where((p) => p['l'] == 'Tomorrow');
     expect(night, isNotEmpty);
     expect(night.first['m'], 940);
   });

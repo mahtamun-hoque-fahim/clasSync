@@ -60,8 +60,12 @@ List<StatePoint> dayTimeline(Routine r, List<Ct> items, DateTime date) {
       items,
       DateTime(date.year, date.month, date.day, m ~/ 60, m % 60),
     );
-    // Only a change starts a new point; identical neighbours collapse.
-    if (out.isEmpty || out.last.state.kind != state.kind || out.last.state.title != state.title) {
+    // Only a change starts a new point; identical neighbours collapse. The
+    // label counts: the exam countdown ticks while its title stays put.
+    if (out.isEmpty ||
+        out.last.state.kind != state.kind ||
+        out.last.state.title != state.title ||
+        out.last.state.label != state.label) {
       out.add(StatePoint(m, state));
     }
   }
@@ -84,7 +88,9 @@ Map<String, dynamic> widgetTimeline(Routine r, List<Ct> items, {int days = 21}) 
         for (final p in dayTimeline(r, items, base.add(Duration(days: i))))
           {
             'm': p.minute,
+            'l': p.state.label,
             't': p.state.title,
+            'x': p.state.tail,
             's': p.state.subtitle,
             'i': p.state.icon,
           },
