@@ -17,6 +17,7 @@ import android.graphics.PorterDuffXfermode
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.os.Build
+import android.util.TypedValue
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
@@ -263,6 +264,11 @@ class ClassWidgetProvider : AppWidgetProvider() {
         private fun headline(point: Point, accent: Int, ink: Int): CharSequence {
             val sb = SpannableStringBuilder(point.title)
             sb.setSpan(StyleSpan(Typeface.BOLD), 0, sb.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+            // The title's ink is ALWAYS set as a span: leaving it to the
+            // TextView's theme default renders a mid-gray on tail-less
+            // states (Day Off, Home, exams), which measured #808080 on the
+            // device while the other lines were pure black.
+            sb.setSpan(ForegroundColorSpan(ink), 0, sb.length, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
             if (point.tail.isNotEmpty()) {
                 val start = sb.length
                 sb.append(" : ").append(point.tail)
@@ -276,7 +282,6 @@ class ClassWidgetProvider : AppWidgetProvider() {
                     start, sb.length,
                     Spannable.SPAN_EXCLUSIVE_EXCLUSIVE,
                 )
-                sb.setSpan(ForegroundColorSpan(ink), 0, start, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
             }
             return sb
         }
@@ -323,6 +328,15 @@ class ClassWidgetProvider : AppWidgetProvider() {
             val onBg = snapColor("onBg", context.getColor(R.color.widget_on_bg))
             val dim = snapColor("dim", context.getColor(R.color.widget_dim))
             val accent = snapColor("accent", context.getColor(R.color.widget_accent))
+            // Type scales with the card's real placed height, the same trick
+            // the panel bitmap uses: the words stay dominant at any size the
+            // host reshapes the widget to.
+            fun sizeOf(viewId: Int, fraction: Float) =
+                rv.setTextViewTextSize(viewId, TypedValue.COMPLEX_UNIT_SP, heightDp * fraction)
+            sizeOf(R.id.nowLine, 0.15f)
+            sizeOf(R.id.nowMain, 0.27f)
+            sizeOf(R.id.stateSub, 0.18f)
+            sizeOf(R.id.nextLine, 0.15f)
             // The background goes through a resource on the inner card view,
             // never the layout root: the MIUI host keeps the initial-layout
             // root background and ignores runtime swaps of it, while

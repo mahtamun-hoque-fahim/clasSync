@@ -51,15 +51,17 @@ List<WidgetSlot> widgetSlots(Routine r, String day) {
 String _hex(Color color) =>
     '#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 
-/// The widget's palette for one brightness, taken from the app's theme: the
-/// accent is the raw swatch the user picked (never a derived or pale tone),
-/// onSurface for the main line and onSurfaceVariant for secondary text. The
-/// background itself goes through the bg drawables, whose solids are set to
-/// the card-surface tone — a runtime tint never survives the launcher host.
-/// Computed in Dart because ColorScheme.fromSeed lives there; the values
-/// freeze into the snapshot.
+/// The widget's palette for one brightness: the accent is the raw swatch the
+/// user picked (never a derived or pale tone), and the ink is PURE BLACK —
+/// the card is locked to a white surface, and the reference art has pure
+/// black text, so no scheme-derived near-black grays and no alpha tints.
+/// The dim tone is only for the legacy fallback rows. The background itself
+/// goes through the bg drawables, whose solids are set to the card-surface
+/// tone — a runtime tint never survives the launcher host. Computed in Dart
+/// because ColorScheme.fromSeed lives there; the values freeze into the
+/// snapshot.
 Map<String, String> _palette(ColorScheme cs, Color accent) => {
-      'onBg': _hex(cs.onSurface),
+      'onBg': '#000000',
       'dim': _hex(cs.onSurfaceVariant),
       'accent': _hex(accent),
     };
