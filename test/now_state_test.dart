@@ -50,14 +50,14 @@ void main() {
       expect(s.kind, 'theory');
       expect(s.title, 'Math-3');
       expect(s.subtitle, 'F · 101 · 09:30-10:20');
-      expect(s.icon, 'gradCap');
+      expect(s.icon, 'grad_cap');
     });
 
     test('lab while the lab block runs, and merged slots keep it unbroken', () {
       // 10:20-11:10 is null (gap), the lab runs 11:15-12:05.
       final s = nowState(r, const [], DateTime(2026, 11, 22, 11, 30));
       expect(s.kind, 'lab');
-      expect(s.icon, 'testTube');
+      expect(s.icon, 'test_tube');
       expect(s.subtitle, contains('11:15-12:05'));
     });
 
@@ -84,7 +84,7 @@ void main() {
           DateTime(2026, 11, 22, 15));
       expect(s.kind, 'incoming');
       expect(s.subtitle, 'Assignment Incoming');
-      expect(s.icon, 'homeAlert');
+      expect(s.icon, 'home_alert');
     });
 
     test('night before a day off, three hours into home', () {
@@ -97,7 +97,7 @@ void main() {
       // Mon's last class is 11:10; home starts 12:40; 3 h later is 15:40.
       expect(night.kind, 'nightBefore');
       expect(night.title, 'Tomorrow');
-      expect(night.icon, 'planeTakeOff');
+      expect(night.icon, 'plane_take_off');
 
       final early = nowState(r, const [], DateTime(2026, 11, 23, 15, 39));
       expect(early.kind, 'home');
@@ -125,7 +125,7 @@ void main() {
           r, [_item('ct', DateTime(2026, 11, 20, 9))], DateTime(2026, 11, 18, 12));
       expect(ct.kind, 'near');
       expect(ct.subtitle, 'CT Near');
-      expect(ct.icon, 'planeTakeOff1');
+      expect(ct.icon, 'plane_take_off1');
 
       final lab = nowState(
           r, [_item('labReport', DateTime(2026, 11, 19, 9))], DateTime(2026, 11, 18, 8));
@@ -160,7 +160,7 @@ void main() {
       final s = nowState(r, const [], DateTime(2026, 11, 18, 20));
       expect(s.kind, 'examHours');
       expect(s.title, '14 Hours Left');
-      expect(s.icon, 'clipboardArrow');
+      expect(s.icon, 'clipboard_arrow');
     });
 
     test('exam day says Today all morning, at the shared exam time', () {
@@ -171,7 +171,7 @@ void main() {
       final s = nowState(r, const [], DateTime(2026, 11, 19, 8));
       expect(s.kind, 'examToday');
       expect(s.title, 'Today');
-      expect(s.icon, 'clipboardCheck');
+      expect(s.icon, 'clipboard_check');
     });
 
     test('a per-exam time overrides the shared one', () {

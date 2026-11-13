@@ -20,19 +20,21 @@ const SRC = path.join(ROOT, 'assets', 'icons');
 const APP_OUT = path.join(SRC, 'png');
 const RES = path.join(ROOT, 'android', 'app', 'src', 'main', 'res');
 
-/** State icon key -> source SVG. Two plane states share the one plane glyph. */
+/** State icon key -> source SVG. Two plane states share the one plane glyph.
+ *  Keys are also Android drawable suffixes (state_<key>.png), so they must
+ *  stay lowercase a-z/0-9/underscore only. */
 const KEYS = {
-  gradCap: 'reicon_grad-cap-filled.svg',
-  testTube: 'garden_test-tube-fill-20.svg',
+  grad_cap: 'reicon_grad-cap-filled.svg',
+  test_tube: 'garden_test-tube-fill-20.svg',
   bus: 'solar_bus-bold.svg',
   home: 'bxs_home.svg',
-  homeAlert: 'mdi_home-alert.svg',
-  planeTakeOff: 'bxs_plane-take-off.svg',
-  planeTakeOff1: 'bxs_plane-take-off.svg',
+  home_alert: 'mdi_home-alert.svg',
+  plane_take_off: 'bxs_plane-take-off.svg',
+  plane_take_off1: 'bxs_plane-take-off.svg',
   plane: 'bxs_plane-take-off.svg',
   clipboard48: 'fluent_clipboard-48-filled.svg',
-  clipboardArrow: 'fluent_clipboard-arrow-right-24-filled.svg',
-  clipboardCheck: 'fluent_clipboard-checkmark-16-filled.svg',
+  clipboard_arrow: 'fluent_clipboard-arrow-right-24-filled.svg',
+  clipboard_check: 'fluent_clipboard-checkmark-16-filled.svg',
 };
 
 /** Widget drawable densities, matching the launcher generator's set. */

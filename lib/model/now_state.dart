@@ -131,7 +131,7 @@ NowState _classMode(Routine r, List<Ct> items, DateTime now) {
         _isLab(s.cell.course) ? 'lab' : 'theory',
         s.cell.course,
         'Next · ${_slotSubtitle(s)}',
-        _isLab(s.cell.course) ? 'testTube' : 'gradCap',
+        _isLab(s.cell.course) ? 'test_tube' : 'grad_cap',
       );
     }
     // All of today's classes are over: homecoming, then home.
@@ -144,7 +144,7 @@ NowState _classMode(Routine r, List<Ct> items, DateTime now) {
       // Home. An item today (later) or tomorrow becomes the card's subtitle.
       final incoming = _incomingLabel(items, now, maxDays: 1);
       if (incoming != null) {
-        return NowState('incoming', 'Sweet Home', '$incoming Incoming', 'homeAlert');
+        return NowState('incoming', 'Sweet Home', '$incoming Incoming', 'home_alert');
       }
       // Three hours into home on the eve of a day off: tomorrow's card.
       if (_tomorrowIsDayOff(r, now) &&
@@ -153,7 +153,7 @@ NowState _classMode(Routine r, List<Ct> items, DateTime now) {
           'nightBefore',
           'Tomorrow',
           'Day Off · Take a deep breath',
-          'planeTakeOff',
+          'plane_take_off',
         );
       }
       return const NowState('home', 'Sweet Home', 'Home', 'home');
@@ -181,15 +181,15 @@ bool _tomorrowIsDayOff(Routine r, DateTime now) {
 }
 
 NowState _classNow(NowSlot s) => _isLab(s.cell.course)
-    ? NowState('lab', s.cell.course, _slotSubtitle(s), 'testTube')
-    : NowState('theory', s.cell.course, _slotSubtitle(s), 'gradCap');
+    ? NowState('lab', s.cell.course, _slotSubtitle(s), 'test_tube')
+    : NowState('theory', s.cell.course, _slotSubtitle(s), 'grad_cap');
 
 // --- day off --------------------------------------------------------------
 
 NowState _dayOffState(List<Ct> items, DateTime now) {
   final next = _nextItem(items, now);
   if (next != null && _calendarDays(now, next.at) <= 2) {
-    return NowState('near', 'Day Off', '${ctKindLabel(next.kind)} Near', 'planeTakeOff1');
+    return NowState('near', 'Day Off', '${ctKindLabel(next.kind)} Near', 'plane_take_off1');
   }
   return const NowState('dayOff', 'Day Off', 'Relaxing', 'plane');
 }
@@ -228,13 +228,13 @@ NowState _examMode(Routine r, List<Ct> items, DateTime now) {
   }
   if (_dateOnly(start) == _dateOnly(now)) {
     // Exam day: the card says go, no matter how many hours remain.
-    return NowState('examToday', 'Today', exam.course, 'clipboardCheck');
+    return NowState('examToday', 'Today', exam.course, 'clipboard_check');
   }
   // Under 24 hours and not the exam day yet: count in hours.
   return NowState(
     'examHours',
     '${(delta.inMinutes / 60).ceil()} Hours Left',
     exam.course,
-    'clipboardArrow',
+    'clipboard_arrow',
   );
 }
