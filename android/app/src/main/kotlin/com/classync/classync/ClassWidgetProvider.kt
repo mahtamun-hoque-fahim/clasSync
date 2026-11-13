@@ -333,10 +333,10 @@ class ClassWidgetProvider : AppWidgetProvider() {
             // host reshapes the widget to.
             fun sizeOf(viewId: Int, fraction: Float) =
                 rv.setTextViewTextSize(viewId, TypedValue.COMPLEX_UNIT_SP, heightDp * fraction)
-            sizeOf(R.id.nowLine, 0.15f)
-            sizeOf(R.id.nowMain, 0.27f)
-            sizeOf(R.id.stateSub, 0.18f)
-            sizeOf(R.id.nextLine, 0.15f)
+            sizeOf(R.id.nowLine, 0.162f)
+            sizeOf(R.id.nowMain, 0.292f)
+            sizeOf(R.id.stateSub, 0.194f)
+            sizeOf(R.id.nextLine, 0.162f)
             // The background goes through a resource on the inner card view,
             // never the layout root: the MIUI host keeps the initial-layout
             // root background and ignores runtime swaps of it, while
