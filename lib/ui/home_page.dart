@@ -325,7 +325,7 @@ class _StateCard extends StatelessWidget {
               // Left inset only (corrected per the user: the earlier
               // "right" mention was meant to be left) plus the vertical
               // padding - the text column runs flush to the right edge.
-              padding: const EdgeInsets.fromLTRB(21, 20, 0, 20),
+              padding: const EdgeInsets.fromLTRB(21, 24, 0, 24),
               child: Row(
                 children: [
                   Expanded(
