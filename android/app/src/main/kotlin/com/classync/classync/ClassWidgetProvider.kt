@@ -345,10 +345,10 @@ class ClassWidgetProvider : AppWidgetProvider() {
                 )
             // Text sizing at parity with the app's Now card (clas24-26
             // tuning): label and subtitle equal, title dominant.
-            sizeOf(R.id.nowLine, 0.143f)
-            sizeOf(R.id.nowMain, 0.269f)
-            sizeOf(R.id.stateSub, 0.143f)
-            sizeOf(R.id.nextLine, 0.143f)
+            sizeOf(R.id.nowLine, 0.1373f)
+            sizeOf(R.id.nowMain, 0.2582f)
+            sizeOf(R.id.stateSub, 0.1373f)
+            sizeOf(R.id.nextLine, 0.1373f)
             // The background goes through a resource on the inner card view,
             // never the layout root: the MIUI host keeps the initial-layout
             // root background and ignores runtime swaps of it, while
