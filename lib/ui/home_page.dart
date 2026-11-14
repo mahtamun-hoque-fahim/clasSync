@@ -322,7 +322,7 @@ class _StateCard extends StatelessWidget {
             // white card). Type runs 4% under the widget's dial here.
             const ink = Colors.white;
             return Padding(
-              padding: const EdgeInsets.fromLTRB(21, 12, 18, 12),
+              padding: const EdgeInsets.fromLTRB(21, 16, 18, 16),
               child: Row(
                 children: [
                   Expanded(
@@ -336,7 +336,7 @@ class _StateCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 0.161 * unit,
+                            fontSize: 0.155 * unit,
                             height: 1.0,
                             color: ink,
                           ),
@@ -351,7 +351,7 @@ class _StateCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 0.292 * unit,
+                            fontSize: 0.28 * unit,
                             height: 1.0,
                             fontWeight: FontWeight.w700,
                             color: ink,
@@ -364,7 +364,7 @@ class _StateCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 0.194 * unit,
+                              fontSize: 0.186 * unit,
                               height: 1.0,
                               color: ink,
                             ),
