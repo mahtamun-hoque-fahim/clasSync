@@ -339,7 +339,7 @@ class _StateCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 0.149 * unit,
+                            fontSize: 0.143 * unit,
                             height: 1.0,
                             color: ink,
                           ),
@@ -367,7 +367,7 @@ class _StateCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 0.179 * unit,
+                              fontSize: 0.143 * unit,
                               height: 1.0,
                               color: ink,
                             ),
