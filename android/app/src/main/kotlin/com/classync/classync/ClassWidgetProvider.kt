@@ -331,8 +331,18 @@ class ClassWidgetProvider : AppWidgetProvider() {
             // Type scales with the card's real placed height, the same trick
             // the panel bitmap uses: the words stay dominant at any size the
             // host reshapes the widget to.
+            //
+            // MIUI's launcher paints the COMPLEX_UNIT_SP value at density
+            // 1.0: a 17sp request lands as 17px instead of 34px on this
+            // density-2.0 screen (measured on device). Passing the wanted
+            // device-pixel size as the number makes the glyph height match
+            // the app's Now card.
             fun sizeOf(viewId: Int, fraction: Float) =
-                rv.setTextViewTextSize(viewId, TypedValue.COMPLEX_UNIT_SP, heightDp * fraction)
+                rv.setTextViewTextSize(
+                    viewId,
+                    TypedValue.COMPLEX_UNIT_SP,
+                    heightDp * density * fraction,
+                )
             // Text sizing at parity with the app's Now card (clas24-26
             // tuning): label and subtitle equal, title dominant.
             sizeOf(R.id.nowLine, 0.143f)
