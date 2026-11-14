@@ -322,10 +322,10 @@ class _StateCard extends StatelessWidget {
             // white card). Type runs 4% under the widget's dial here.
             const ink = Colors.white;
             return Padding(
-              // Vertical padding plus the right inset only: the text runs
-              // flush to the left edge, but keeps the 18dp gap before the
-              // icon panel it had before the vertical-only step.
-              padding: const EdgeInsets.fromLTRB(0, 20, 18, 20),
+              // Left inset only (corrected per the user: the earlier
+              // "right" mention was meant to be left) plus the vertical
+              // padding - the text column runs flush to the right edge.
+              padding: const EdgeInsets.fromLTRB(21, 20, 0, 20),
               child: Row(
                 children: [
                   Expanded(
