@@ -218,7 +218,7 @@ NowState _dayOffState(List<Ct> items, DateTime now) {
       'Now',
       'Day Off',
       '${ctKindLabel(next.kind)} Near',
-      'plane_take_off1',
+      'plane_landing',
     );
   }
   return const NowState('dayOff', 'Now', 'Day Off', 'Relaxing', 'plane');

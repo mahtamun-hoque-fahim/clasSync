@@ -131,7 +131,7 @@ void main() {
           r, [_item('ct', DateTime(2026, 11, 20, 9))], DateTime(2026, 11, 18, 12));
       expect(ct.kind, 'near');
       expect(ct.subtitle, 'CT Near');
-      expect(ct.icon, 'plane_take_off1');
+      expect(ct.icon, 'plane_landing');
 
       final lab = nowState(
           r, [_item('labReport', DateTime(2026, 11, 19, 9))], DateTime(2026, 11, 18, 8));

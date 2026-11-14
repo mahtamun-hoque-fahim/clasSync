@@ -30,7 +30,7 @@ const KEYS = {
   home: 'bxs_home.svg',
   home_alert: 'mdi_home-alert.svg',
   plane_take_off: 'bxs_plane-take-off.svg',
-  plane_take_off1: 'bxs_plane-take-off.svg',
+  plane_landing: 'bxs_plane-land.svg',
   plane: 'bxs_plane-take-off.svg',
   clipboard48: 'fluent_clipboard-48-filled.svg',
   clipboard_arrow: 'fluent_clipboard-arrow-right-24-filled.svg',
