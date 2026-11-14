@@ -317,7 +317,10 @@ class _StateCard extends StatelessWidget {
             // scales exactly like the widget does on resize.
             final w = box.maxWidth.isFinite ? box.maxWidth : 328.0;
             final unit = w / 2.58;
-            const ink = Colors.black;
+            // The app card's ink: white on the accent gradient, per the
+            // user's live feedback (the widget keeps its black ink on the
+            // white card). Type runs 4% under the widget's dial here.
+            const ink = Colors.white;
             return Padding(
               padding: const EdgeInsets.fromLTRB(21, 12, 18, 12),
               child: Row(
@@ -332,7 +335,11 @@ class _StateCard extends StatelessWidget {
                           state.label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 0.168 * unit, color: ink),
+                          style: TextStyle(
+                            fontSize: 0.161 * unit,
+                            height: 1.0,
+                            color: ink,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text.rich(
@@ -344,7 +351,8 @@ class _StateCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 0.304 * unit,
+                            fontSize: 0.292 * unit,
+                            height: 1.0,
                             fontWeight: FontWeight.w700,
                             color: ink,
                           ),
@@ -356,7 +364,8 @@ class _StateCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 0.202 * unit,
+                              fontSize: 0.194 * unit,
+                              height: 1.0,
                               color: ink,
                             ),
                           ),
