@@ -285,6 +285,12 @@ class _TodayRow extends StatelessWidget {
 /// state's white-gradient icon on the right, and the state's title and
 /// subtitle on the left. Every state - class, lab, homecoming, home,
 /// incoming, night before, day off, near, exam countdown - renders here.
+///
+/// Text presentation is at parity with the home-screen widget: pure black
+/// ink on every line (no scheme-derived tones, no alpha tints), the same
+/// type fractions of the card's real height, the 65/35 text/icon split, the
+/// widget's padding, and its tight line gaps. Only the background differs -
+/// the accent gradient instead of the widget's white card.
 class _StateCard extends StatelessWidget {
   final NowState state;
   final String accent;
@@ -293,10 +299,7 @@ class _StateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
-    final fill = accentFill(accent);
-    final ink = inkOnAccent(fill);
     // The card's own surface is explicit, so the gradient's 70% top stop
     // composites over exactly the tone the card sits on.
     return Card(
@@ -306,51 +309,76 @@ class _StateCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: liveGradient(accent, scheme.surfaceContainerLow),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Expanded(
-                child: DefaultTextStyle.merge(
-                  style: TextStyle(color: ink),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        state.label,
-                        style: text.labelMedium?.copyWith(
-                          color: ink.withValues(alpha: 0.8),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text.rich(
-                        TextSpan(children: [
-                          TextSpan(text: state.title),
-                          if (state.tail.isNotEmpty)
-                            TextSpan(text: ' : ${state.tail}'),
-                        ]),
-                        style: text.titleLarge?.copyWith(color: ink),
-                      ),
-                      if (state.subtitle.isNotEmpty)
+        child: LayoutBuilder(
+          builder: (context, box) {
+            // Type parity with the widget: every size rides the card's
+            // width, expressed through the widget's measured placed aspect
+            // (313.5 x 121.5 dp on the reference phone), so the app card
+            // scales exactly like the widget does on resize.
+            final w = box.maxWidth.isFinite ? box.maxWidth : 328.0;
+            final unit = w / 2.58;
+            const ink = Colors.black;
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(21, 12, 18, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 65,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          state.subtitle,
-                          style: text.bodyMedium?.copyWith(
-                            color: ink.withValues(alpha: 0.85),
+                          state.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 0.168 * unit, color: ink),
+                        ),
+                        const SizedBox(height: 2),
+                        Text.rich(
+                          TextSpan(children: [
+                            TextSpan(text: state.title),
+                            if (state.tail.isNotEmpty)
+                              TextSpan(text: ' : ${state.tail}'),
+                          ]),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 0.304 * unit,
+                            fontWeight: FontWeight.w700,
+                            color: ink,
                           ),
                         ),
-                    ],
+                        if (state.subtitle.isNotEmpty) ...[
+                          const SizedBox(height: 1),
+                          Text(
+                            state.subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 0.202 * unit,
+                              color: ink,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                ),
+                  Expanded(
+                    flex: 35,
+                    child: Center(
+                      child: Image.asset(
+                        'assets/icons/png/${state.icon}.png',
+                        width: 0.47 * 0.35 * w,
+                        height: 0.47 * 0.35 * w,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Image.asset(
-                'assets/icons/png/${state.icon}.png',
-                width: 56,
-                height: 56,
-                fit: BoxFit.contain,
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
