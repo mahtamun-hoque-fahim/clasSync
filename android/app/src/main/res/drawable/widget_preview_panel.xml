@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Static sample of the state panel for class_widget_preview.xml (the
+     widgets-page preview). The live widget draws this as one bitmap from
+     code so the accent follows the app; the preview never runs code, so the
+     teal swatch's gradient is baked in with the grad-cap glyph at the tile's
+     47%-of-panel size. Corners draw at MIUI's 0.75x of the card's 22dp
+     radius, meeting the launcher-rendered corner. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <corners
+                android:topRightRadius="16.5dp"
+                android:bottomRightRadius="16.5dp" />
+            <gradient
+                android:angle="270"
+                android:startColor="#4DB6AC"
+                android:endColor="#009688" />
+        </shape>
+    </item>
+    <item
+        android:width="51dp"
+        android:height="51dp"
+        android:drawable="@drawable/state_grad_cap"
+        android:gravity="center" />
+</layer-list>
