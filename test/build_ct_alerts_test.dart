@@ -7,6 +7,7 @@ Ct ct({
   List<int> remindBefore = const [60],
   String? room = '224',
   String? note,
+  String kind = 'ct',
 }) =>
     Ct(
       id: 'a',
@@ -14,6 +15,7 @@ Ct ct({
       at: at ?? DateTime(2026, 11, 5, 9, 30),
       room: room,
       note: note,
+      kind: kind,
       remindBefore: remindBefore,
     );
 
@@ -52,6 +54,20 @@ void main() {
     final alert = buildCtAlerts([ct(room: ' ', note: '')], now).single;
     expect(alert.title, 'CT: DLD');
     expect(alert.body, 'in 1 hour · Thu 5 Nov, 09:30');
+  });
+
+  test('title names the kind', () {
+    for (final kind in ctKinds) {
+      final alert = buildCtAlerts(
+        [ct(kind: kind, room: null)],
+        now,
+      ).single;
+      expect(
+        alert.title,
+        '${ctKindLabel(kind)}: DLD',
+        reason: 'kind $kind should read as ${ctKindLabel(kind)}',
+      );
+    }
   });
 
   test('labels', () {

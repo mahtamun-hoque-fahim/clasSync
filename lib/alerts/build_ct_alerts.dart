@@ -48,10 +48,11 @@ List<CtAlert> buildCtAlerts(List<Ct> cts, DateTime now) {
     for (final minutes in ct.remindBefore) {
       final when = ct.at.subtract(Duration(minutes: minutes));
       if (!when.isAfter(now)) continue;
+      final label = ctKindLabel(ct.kind);
       alerts.add(CtAlert(
         id: 1000 + alerts.length,
         when: when,
-        title: room.isEmpty ? 'CT: ${ct.course}' : 'CT: ${ct.course} · $room',
+        title: room.isEmpty ? '$label: ${ct.course}' : '$label: ${ct.course} · $room',
         body: [
           'in ${reminderLabel(minutes)} · ${formatCtTime(ct.at)}',
           if (note.isNotEmpty) note,
