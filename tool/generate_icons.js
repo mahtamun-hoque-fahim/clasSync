@@ -90,6 +90,23 @@ const DENSITIES = [
   { dir: 'xxxhdpi', legacy: 192, adaptive: 432, status: 96 },
 ];
 
+/**
+ * Launcher icon background per accent swatch: the raw swatch the app uses as
+ * its accent (lib/theme.dart `swatches`). The manifest carries one activity
+ * alias per swatch, each pointing at its own adaptive icon + legacy bitmap;
+ * LauncherIcon.kt enables exactly one when the accent changes, so the icon's
+ * background follows the app's colour theme.
+ */
+const SWATCHES = {
+  blue: '#1976D2',
+  indigo: '#3F51B5',
+  teal: '#009688',
+  green: '#388E3C',
+  orange: '#FF9800',
+  pink: '#E91E63',
+  purple: '#7B1FA2',
+};
+
 console.log('Android launcher + adaptive layers:');
 for (const d of DENSITIES) {
   write(
@@ -130,12 +147,41 @@ for (const name of ['ic_launcher', 'ic_launcher_round']) {
   console.log('  ', path.relative(ROOT, out));
 }
 
+// Per-swatch icon variants for the activity aliases: a legacy bitmap fallback
+// and an adaptive descriptor whose background is that swatch. Foreground and
+// monochrome layers are shared with the default icon.
+console.log('Per-swatch launcher icons:');
+for (const [name, hex] of Object.entries(SWATCHES)) {
+  for (const d of DENSITIES) {
+    write(
+      compose({ size: d.legacy, inset: 0.10, bg: hex }),
+      path.join(RES, `mipmap-${d.dir}`, `ic_launcher_${name}.png`),
+      d.legacy,
+    );
+  }
+  const xml = `<?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher icon for the ${name} accent; enabled through its activity
+     alias when the user picks this swatch (LauncherIcon.kt). -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_bg_${name}" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+    <monochrome android:drawable="@mipmap/ic_launcher_monochrome" />
+</adaptive-icon>
+`;
+  const out = path.join(RES, 'mipmap-anydpi-v26', `ic_launcher_${name}.xml`);
+  fs.writeFileSync(out, xml);
+  console.log('  ', path.relative(ROOT, out));
+}
+
 const colors = path.join(RES, 'values', 'ic_launcher_background.xml');
 fs.writeFileSync(
   colors,
   `<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">${BRAND}</color>
+${Object.entries(SWATCHES)
+  .map(([name, hex]) => `    <color name="ic_launcher_bg_${name}">${hex}</color>`)
+  .join('\n')}
 </resources>
 `,
 );

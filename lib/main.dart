@@ -9,6 +9,7 @@ import 'alerts/scheduler.dart';
 import 'data/ct_repo.dart';
 import 'data/google_auth.dart';
 import 'data/routine_repo.dart';
+import 'device/launcher_icon.dart';
 import 'firebase_options.dart';
 import 'model/ct.dart';
 import 'model/routine.dart';
@@ -91,6 +92,9 @@ class _SignedInAppState extends State<_SignedInApp> {
   late final StreamSubscription<Routine> _routineAlerts;
   late final StreamSubscription<List<Ct>> _ctAlerts;
   AlertSync? _sync;
+  // The launcher icon's background follows the accent; this is the last
+  // accent the icon was set to, so the switch runs only on a real change.
+  String? _iconAccent;
   // Returning from Android settings may have granted exact alarms, which only
   // apply to alerts scheduled afterwards.
   late final _lifecycle = AppLifecycleListener(onResume: _refresh);
@@ -107,7 +111,18 @@ class _SignedInAppState extends State<_SignedInApp> {
       alertScheduler.reschedule,
       onSynced: (r, cts) => WidgetSync.push(r, cts),
     );
-    _routineAlerts = _routine.listen((r) => sync.routine = r, onError: _logError);
+    _routineAlerts = _routine.listen((r) {
+      sync.routine = r;
+      // The launcher icon follows the accent. Pending alert intents hold the
+      // icon alias they were built with, so a real switch re-runs the
+      // reschedule against the new launch component.
+      if (r.accent != _iconAccent) {
+        _iconAccent = r.accent;
+        setLauncherIconAccent(r.accent).then((switched) {
+          if (switched) sync.refresh();
+        });
+      }
+    }, onError: _logError);
     _ctAlerts = widget.ctRepo.watch().listen(
       (cts) => sync.cts = cts,
       onError: _logError,

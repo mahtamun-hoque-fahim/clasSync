@@ -35,6 +35,15 @@ class MainActivity : FlutterActivity() {
                         result.success(allowed)
                     }
                     "isLocked" -> result.success(keyguard.isKeyguardLocked)
+                    "setIconAccent" -> {
+                        // Launcher icon background follows the accent swatch;
+                        // true when the enabled alias changed, which asks for
+                        // one alert reschedule against the new launch
+                        // component (Dart re-runs it).
+                        result.success(
+                            LauncherIcon.setAccent(this, call.arguments as? String ?: "teal")
+                        )
+                    }
                     "unlock" -> when {
                         !keyguard.isKeyguardLocked -> result.success(true)
                         Build.VERSION.SDK_INT < Build.VERSION_CODES.O -> result.success(false)

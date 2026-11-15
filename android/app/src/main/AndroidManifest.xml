@@ -10,21 +10,111 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round">
-        <!-- Holds the launcher filter. flutter_local_notifications resolves its
-             pending intent with getLaunchIntentForPackage(), so this is what a
-             notification tap and a full-screen intent both open. It forwards
-             and finishes without drawing. -->
+        <!-- The router. flutter_local_notifications resolves its pending
+             intent with getLaunchIntentForPackage(), so a notification tap
+             and a full-screen intent both land here. It forwards and
+             finishes without drawing. The MAIN/LAUNCHER filter lives on the
+             activity-aliases below (one per accent swatch), not here: the
+             alias is what the launcher and the launch intent resolve to,
+             and this activity stays its target. -->
         <activity
             android:name=".RouterActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
-            android:theme="@style/RouterTheme">
+            android:theme="@style/RouterTheme" />
+        <!-- Launcher icon aliases, one per accent swatch. The Android
+             launcher icon is static, so the accent switch happens by
+             enabling exactly one alias (each carries its own icon whose
+             background is that swatch) and disabling the rest - see
+             LauncherIcon.kt. Pending alert intents keep the alias component
+             they were created with, so Dart re-runs the alert reschedule
+             after every switch (lib/main.dart). Teal is the manifest
+             default; the app re-syncs from the routine on every launch. -->
+        <activity-alias
+            android:name=".IconBlue"
+            android:targetActivity=".RouterActivity"
+            android:icon="@mipmap/ic_launcher_blue"
+            android:roundIcon="@mipmap/ic_launcher_blue"
+            android:enabled="false"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-        </activity>
+        </activity-alias>
+        <activity-alias
+            android:name=".IconIndigo"
+            android:targetActivity=".RouterActivity"
+            android:icon="@mipmap/ic_launcher_indigo"
+            android:roundIcon="@mipmap/ic_launcher_indigo"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".IconTeal"
+            android:targetActivity=".RouterActivity"
+            android:icon="@mipmap/ic_launcher_teal"
+            android:roundIcon="@mipmap/ic_launcher_teal"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".IconGreen"
+            android:targetActivity=".RouterActivity"
+            android:icon="@mipmap/ic_launcher_green"
+            android:roundIcon="@mipmap/ic_launcher_green"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".IconOrange"
+            android:targetActivity=".RouterActivity"
+            android:icon="@mipmap/ic_launcher_orange"
+            android:roundIcon="@mipmap/ic_launcher_orange"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".IconPink"
+            android:targetActivity=".RouterActivity"
+            android:icon="@mipmap/ic_launcher_pink"
+            android:roundIcon="@mipmap/ic_launcher_pink"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".IconPurple"
+            android:targetActivity=".RouterActivity"
+            android:icon="@mipmap/ic_launcher_purple"
+            android:roundIcon="@mipmap/ic_launcher_purple"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
         <!-- The lock-screen alert. Not exported: only RouterActivity starts it. -->
         <activity
             android:name=".AlertActivity"
