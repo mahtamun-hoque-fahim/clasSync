@@ -91,9 +91,9 @@ class _HomePageState extends State<HomePage> {
   AlertScheduler get _scheduler => widget.scheduler ?? alertScheduler;
 
   // Alerts open this page on the lock screen, so editing needs an unlock first.
-  Future<void> _editCt([Ct? ct]) async {
+  Future<void> _editCt(Ct? ct, {List<String> courses = const []}) async {
     if (!await _scheduler.unlock() || !mounted) return;
-    final edit = await showCtEditor(context, initial: ct);
+    final edit = await showCtEditor(context, initial: ct, courses: courses);
     if (edit == null) return;
     final saved = edit.ct;
     if (saved != null) {
@@ -103,7 +103,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Widget _ctSection() {
+  Widget _ctSection(List<String> courses) {
     final now = DateTime.now();
     final cts = _ctsData
         .where((ct) => ct.at.isAfter(now))
@@ -123,7 +123,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               TextButton.icon(
-                onPressed: _editCt,
+                onPressed: () => _editCt(null, courses: courses),
                 icon: const Icon(Icons.add),
                 label: const Text('Add CT'),
               ),
@@ -139,7 +139,7 @@ class _HomePageState extends State<HomePage> {
               subtitle: Text(
                 '${ctKindLabel(ct.kind)} · ${formatCtTime(ct.at)}',
               ),
-              onTap: () => _editCt(ct),
+              onTap: () => _editCt(ct, courses: courses),
             ),
           ),
       ],
@@ -195,7 +195,7 @@ class _HomePageState extends State<HomePage> {
                 slot: t.next,
                 empty: t.isClassDay ? 'No more classes today' : 'No classes today',
               ),
-              _ctSection(),
+              _ctSection(r.courseNames()),
               if (t.isClassDay) ...[
                 const SizedBox(height: 12),
                 Padding(

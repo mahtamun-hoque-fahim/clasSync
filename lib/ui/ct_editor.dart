@@ -14,16 +14,23 @@ class CtEdit {
   const CtEdit(this.ct);
 }
 
-Future<CtEdit?> showCtEditor(BuildContext context, {Ct? initial}) =>
+/// [courses] is the routine's own course list ([Routine.courseNames]); when it
+/// is not empty the course is chosen from it instead of typed.
+Future<CtEdit?> showCtEditor(
+  BuildContext context, {
+  Ct? initial,
+  List<String> courses = const [],
+}) =>
     showDialog<CtEdit>(
       context: context,
-      builder: (_) => _CtEditor(initial: initial),
+      builder: (_) => _CtEditor(initial: initial, courses: courses),
     );
 
 class _CtEditor extends StatefulWidget {
   final Ct? initial;
+  final List<String> courses;
 
-  const _CtEditor({this.initial});
+  const _CtEditor({this.initial, required this.courses});
 
   @override
   State<_CtEditor> createState() => _CtEditorState();
@@ -31,6 +38,8 @@ class _CtEditor extends StatefulWidget {
 
 class _CtEditorState extends State<_CtEditor> {
   late final _course = TextEditingController(text: widget.initial?.course);
+  // The course picked from the routine's list; null until one is chosen.
+  late String? _pickedCourse = widget.initial?.course;
   late final _room = TextEditingController(text: widget.initial?.room);
   late final _note = TextEditingController(text: widget.initial?.note);
   late DateTime _at = widget.initial?.at ?? _tomorrowMorning();
@@ -127,8 +136,17 @@ class _CtEditorState extends State<_CtEditor> {
         if (!_reminders.remove(minutes)) _reminders.add(minutes);
       });
 
+  /// The routine's courses, with the edited CT's own course merged in so it
+  /// still displays when it no longer exists in the grid.
+  List<String> get _courses {
+    final names = {...widget.courses};
+    final own = widget.initial?.course;
+    if (own != null && own.isNotEmpty) names.add(own);
+    return names.toList()..sort();
+  }
+
   bool get _isValid =>
-      _course.text.trim().isNotEmpty &&
+      (_courses.isEmpty ? _course.text.trim().isNotEmpty : _pickedCourse != null) &&
       _at.isAfter(DateTime.now()) &&
       _reminders.isNotEmpty;
 
@@ -139,9 +157,11 @@ class _CtEditorState extends State<_CtEditor> {
     }
     final room = _room.text.trim();
     final note = _note.text.trim();
+    final course =
+        _courses.isEmpty ? _course.text.trim() : _pickedCourse!;
     Navigator.of(context).pop(CtEdit(Ct(
       id: widget.initial?.id ?? '',
-      course: _course.text.trim(),
+      course: course,
       at: _at,
       room: room.isEmpty ? null : room,
       note: note.isEmpty ? null : note,
@@ -166,15 +186,32 @@ class _CtEditorState extends State<_CtEditor> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            TextField(
-              controller: _course,
-              decoration: InputDecoration(
-                labelText: 'Course',
-                errorText: _showErrors && _course.text.trim().isEmpty
-                    ? 'Required'
-                    : null,
+            if (_courses.isNotEmpty)
+              DropdownButtonFormField<String>(
+                initialValue:
+                    _courses.contains(_pickedCourse) ? _pickedCourse : null,
+                decoration: InputDecoration(
+                  labelText: 'Course',
+                  errorText: _showErrors && _pickedCourse == null
+                      ? 'Required'
+                      : null,
+                ),
+                items: [
+                  for (final c in _courses)
+                    DropdownMenuItem(value: c, child: Text(c)),
+                ],
+                onChanged: (v) => setState(() => _pickedCourse = v),
+              )
+            else
+              TextField(
+                controller: _course,
+                decoration: InputDecoration(
+                  labelText: 'Course',
+                  errorText: _showErrors && _course.text.trim().isEmpty
+                      ? 'Required'
+                      : null,
+                ),
               ),
-            ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,

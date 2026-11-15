@@ -149,6 +149,18 @@ class Routine {
   List<ClassCell?> row(String day) =>
       cells[day] ?? List<ClassCell?>.filled(periods.length, null);
 
+  /// Every course name that exists in the grid, sorted, for course pickers
+  /// (the exam dialog and the CT editor choose from these instead of typing).
+  List<String> courseNames() {
+    final names = <String>{};
+    cells.forEach((_, row) {
+      for (final cell in row) {
+        if (cell != null) names.add(cell.course);
+      }
+    });
+    return names.toList()..sort();
+  }
+
   static const _unset = Object();
 
   Routine copyWith({

@@ -411,15 +411,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   /// Course names that exist anywhere in the routine grid, for the exam picker.
-  List<String> _courseNames(Routine r) {
-    final names = <String>{};
-    r.cells.forEach((_, row) {
-      for (final cell in row) {
-        if (cell != null) names.add(cell.course);
-      }
-    });
-    return names.toList()..sort();
-  }
+  List<String> _courseNames(Routine r) => r.courseNames();
 
   List<Widget> _examSection(BuildContext context, Routine r) {
     final exams = [...r.exams]..sort((a, b) {
