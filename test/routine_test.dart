@@ -36,6 +36,19 @@ void main() {
     expect(Routine.parse(json).$1!.toJson(), json);
   });
 
+  test('courseNames lists every grid course, sorted, without duplicates', () {
+    final r = parsed();
+    final names = r.courseNames();
+    expect(names, names.toSet().toList(), reason: 'no duplicates');
+    expect(names, equals([...names]..sort()), reason: 'sorted');
+    // Every course in the grid shows up.
+    r.cells.forEach((_, row) {
+      for (final cell in row) {
+        if (cell != null) expect(names, contains(cell.course));
+      }
+    });
+  });
+
   test('tough is omitted from json when false', () {
     final cell = parsed().toJson()['cells']['Sun'][0] as Map<String, dynamic>;
     expect(cell.containsKey('tough'), isFalse);
