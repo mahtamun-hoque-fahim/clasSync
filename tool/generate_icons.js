@@ -82,11 +82,15 @@ function write(svg, outPath, size) {
 // Android
 // ---------------------------------------------------------------------------
 // Legacy launcher bitmap, adaptive foreground, adaptive monochrome, status bar.
-// The cap sits at 60% of the icon: inset 0.20 on every composition that draws
-// its own background (legacy, web, master). The adaptive layers are masked by
-// the launcher to the central 66/108 of the canvas, so 0.32 there puts the
-// visible cap at 60% of what the user sees on an adaptive-icon launcher.
-const ADAPTIVE_INSET = 0.32;
+// The cap is CAP of the icon, centered with clear space. Every composition
+// that draws its own background (legacy, web, master) draws the art at CAP of
+// its canvas. The adaptive layers are masked by the launcher to the central
+// 66/108 of the canvas, so their art is CAP of the *visible* window; the
+// maskable web icons are masked to the central 80%. Inset = (1 - art)/2.
+const CAP = 0.70;
+const LEGACY_INSET = (1 - CAP) / 2;
+const ADAPTIVE_INSET = (1 - (CAP * 66) / 108) / 2;
+const MASKABLE_INSET = (1 - CAP * 0.80) / 2;
 const DENSITIES = [
   { dir: 'mdpi', legacy: 48, adaptive: 108, status: 24 },
   { dir: 'hdpi', legacy: 72, adaptive: 162, status: 36 },
@@ -115,7 +119,7 @@ const SWATCHES = {
 console.log('Android launcher + adaptive layers:');
 for (const d of DENSITIES) {
   write(
-    compose({ size: d.legacy, inset: 0.20, bg: BRAND }),
+    compose({ size: d.legacy, inset: LEGACY_INSET, bg: BRAND }),
     path.join(RES, `mipmap-${d.dir}`, 'ic_launcher.png'),
     d.legacy,
   );
@@ -159,7 +163,7 @@ console.log('Per-swatch launcher icons:');
 for (const [name, hex] of Object.entries(SWATCHES)) {
   for (const d of DENSITIES) {
     write(
-      compose({ size: d.legacy, inset: 0.20, bg: hex }),
+      compose({ size: d.legacy, inset: LEGACY_INSET, bg: hex }),
       path.join(RES, `mipmap-${d.dir}`, `ic_launcher_${name}.png`),
       d.legacy,
     );
@@ -196,16 +200,16 @@ console.log('  ', path.relative(ROOT, colors));
 // Web
 // ---------------------------------------------------------------------------
 console.log('Web icons:');
-write(compose({ size: 32, inset: 0.20, bg: BRAND }), path.join(WEB, 'favicon.png'), 32);
-write(compose({ size: 192, inset: 0.20, bg: BRAND }), path.join(WEB, 'icons', 'Icon-192.png'), 192);
-write(compose({ size: 512, inset: 0.20, bg: BRAND }), path.join(WEB, 'icons', 'Icon-512.png'), 512);
-write(compose({ size: 192, inset: 0.28, bg: BRAND }), path.join(WEB, 'icons', 'Icon-maskable-192.png'), 192);
-write(compose({ size: 512, inset: 0.28, bg: BRAND }), path.join(WEB, 'icons', 'Icon-maskable-512.png'), 512);
+write(compose({ size: 32, inset: LEGACY_INSET, bg: BRAND }), path.join(WEB, 'favicon.png'), 32);
+write(compose({ size: 192, inset: LEGACY_INSET, bg: BRAND }), path.join(WEB, 'icons', 'Icon-192.png'), 192);
+write(compose({ size: 512, inset: LEGACY_INSET, bg: BRAND }), path.join(WEB, 'icons', 'Icon-512.png'), 512);
+write(compose({ size: 192, inset: MASKABLE_INSET, bg: BRAND }), path.join(WEB, 'icons', 'Icon-maskable-192.png'), 192);
+write(compose({ size: 512, inset: MASKABLE_INSET, bg: BRAND }), path.join(WEB, 'icons', 'Icon-maskable-512.png'), 512);
 
 // ---------------------------------------------------------------------------
 // Store / README master
 // ---------------------------------------------------------------------------
 console.log('Master:');
-write(compose({ size: 1024, inset: 0.20, bg: BRAND }), path.join(ROOT, 'assets', 'icon', 'icon-1024.png'), 1024);
+write(compose({ size: 1024, inset: LEGACY_INSET, bg: BRAND }), path.join(ROOT, 'assets', 'icon', 'icon-1024.png'), 1024);
 
 console.log('\nDone.');
