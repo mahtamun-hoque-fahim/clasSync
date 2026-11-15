@@ -325,7 +325,7 @@ class _StateCard extends StatelessWidget {
               // Left inset only (corrected per the user: the earlier
               // "right" mention was meant to be left) plus the vertical
               // padding - the text column runs flush to the right edge.
-              padding: const EdgeInsets.fromLTRB(24, 24, 0, 24),
+              padding: const EdgeInsets.fromLTRB(24, 28, 0, 28),
               child: Row(
                 children: [
                   Expanded(
@@ -340,7 +340,7 @@ class _StateCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 0.1373 * unit,
-                            height: 1.0,
+                            height: 1.1,
                             color: ink,
                           ),
                         ),
@@ -355,7 +355,7 @@ class _StateCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 0.2582 * unit,
-                            height: 1.0,
+                            height: 1.1,
                             fontWeight: FontWeight.w700,
                             color: ink,
                           ),
@@ -368,7 +368,7 @@ class _StateCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 0.1373 * unit,
-                              height: 1.0,
+                              height: 1.1,
                               color: ink,
                             ),
                           ),
