@@ -87,7 +87,7 @@ function write(svg, outPath, size) {
 // its canvas. The adaptive layers are masked by the launcher to the central
 // 66/108 of the canvas, so their art is CAP of the *visible* window; the
 // maskable web icons are masked to the central 80%. Inset = (1 - art)/2.
-const CAP = 0.70;
+const CAP = 0.80;
 const LEGACY_INSET = (1 - CAP) / 2;
 const ADAPTIVE_INSET = (1 - (CAP * 66) / 108) / 2;
 const MASKABLE_INSET = (1 - CAP * 0.80) / 2;
