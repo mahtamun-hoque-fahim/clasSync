@@ -44,11 +44,17 @@
                 android:ellipsize="end"
                 android:text="Open ClasSync" />
 
+            <!-- Negative top margins pull each line up into the previous
+                 line's empty font-box space: single-line TextViews ignore
+                 lineSpacingMultiplier, so this is the only remaining
+                 line-height lever (clas43 proved multipliers do nothing
+                 here). The measured gap was ~11dp, so -5dp stays inside
+                 the empty zone and glyphs cannot collide. -->
             <TextView
                 android:id="@+id/nowMain"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="0dp"
+                android:layout_marginTop="-5dp"
                 android:textSize="20sp"
                 android:lineSpacingMultiplier="0.4"
                 android:includeFontPadding="false"
@@ -61,7 +67,7 @@
                 android:id="@+id/stateSub"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="0dp"
+                android:layout_marginTop="-5dp"
                 android:textSize="13sp"
                 android:lineSpacingMultiplier="0.4"
                 android:includeFontPadding="false"
@@ -73,7 +79,7 @@
                 android:id="@+id/nextLine"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="1dp"
+                android:layout_marginTop="-4dp"
                 android:textSize="13sp"
                 android:lineSpacingMultiplier="0.4"
                 android:includeFontPadding="false"
