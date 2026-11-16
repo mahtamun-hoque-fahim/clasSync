@@ -65,10 +65,16 @@ void main() {
       expect(s.tail, '224');
     });
 
-    test('before the first class shows the next class', () {
+    test('before the first class shows the next class and room', () {
       final s = nowState(r, const [], DateTime(2026, 11, 22, 8, 0));
       expect(s.kind, 'theory');
-      expect(s.subtitle, 'Starts 09:30');
+      expect(s.subtitle, 'Next : DLD LAB . 224');
+    });
+
+    test('before the day\'s last class falls back to its start time', () {
+      final s = nowState(r, const [], DateTime(2026, 11, 22, 10, 30));
+      expect(s.kind, 'lab');
+      expect(s.subtitle, 'Starts 11:15');
     });
 
     test('homecoming runs 1.5 h after the last class ends', () {

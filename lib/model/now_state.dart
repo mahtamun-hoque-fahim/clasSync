@@ -134,16 +134,21 @@ NowState _classMode(Routine r, List<Ct> items, DateTime now) {
         return _classNow(s, i + 1 < slots.length ? slots[i + 1] : null);
       }
     }
-    // Classes still ahead today: show the next one.
+    // Classes still ahead today: show the next one. The third line carries
+    // the class after it with its room, the same shape as a running class;
+    // the day's last upcoming class falls back to its start time.
     final next = slots.where((s) => s.period.startMinute > minute).toList();
     if (next.isNotEmpty) {
       final s = next.first;
       final isLab = _isLab(s.cell.course);
+      final after = next.length > 1 ? next[1] : null;
       return NowState(
         isLab ? 'lab' : 'theory',
         'Now',
         s.cell.course,
-        'Starts ${s.period.start}',
+        after == null
+            ? 'Starts ${s.period.start}'
+            : 'Next : ${after.cell.course} . ${after.cell.room}',
         isLab ? 'test_tube' : 'grad_cap',
         tail: s.cell.room,
       );
