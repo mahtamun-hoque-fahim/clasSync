@@ -71,10 +71,28 @@ void main() {
       [_item('ct', DateTime(2026, 11, 20, 9))],
     );
     final wed = days['2026-11-18']!;
-    expect(wed.single['s'], 'CT Near');
+    expect(wed.single['s'], 'CT Due: 2d left');
     // Tue 24th: the CT is long past, so the (empty-grid) day relaxes.
     final tue = days['2026-11-24']!;
     expect(tue.single['t'], 'Day Off');
+  });
+
+  test('the due line counts down hour by hour on the item day', () {
+    // CT on Tue 2026-11-24 at 15:00; Tue is an empty grid (day off).
+    final days = widgetTimeline(
+      _routine(),
+      [_item('ct', DateTime(2026, 11, 24, 15))],
+    );
+    final tue = days['2026-11-24']!;
+    final due = [
+      for (final p in tue)
+        if ((p['s'] as String).startsWith('CT Due')) p['s'],
+    ];
+    expect(due.first, 'CT Due: 15h left');
+    expect(due.last, 'CT Due: 1h left');
+    // One point per hour: 15, 14, ... 1. The 15:00 point itself drops the
+    // item (its time has arrived), so the card relaxes there.
+    expect(due, hasLength(15));
   });
 
   test('exam mode gap days show the countdown, changing at midnight', () {

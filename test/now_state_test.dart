@@ -93,7 +93,7 @@ void main() {
       final s = nowState(r, [_item('assignment', DateTime(2026, 11, 23, 17))],
           DateTime(2026, 11, 22, 15));
       expect(s.kind, 'incoming');
-      expect(s.subtitle, 'Assignment Incoming');
+      expect(s.subtitle, 'Assignment Due: 1d left');
       expect(s.icon, 'home_alert');
     });
 
@@ -136,12 +136,19 @@ void main() {
       final ct = nowState(
           r, [_item('ct', DateTime(2026, 11, 20, 9))], DateTime(2026, 11, 18, 12));
       expect(ct.kind, 'near');
-      expect(ct.subtitle, 'CT Near');
+      expect(ct.subtitle, 'CT Due: 2d left');
       expect(ct.icon, 'plane_landing');
 
       final lab = nowState(
           r, [_item('labReport', DateTime(2026, 11, 19, 9))], DateTime(2026, 11, 18, 8));
-      expect(lab.subtitle, 'Lab Report Near');
+      expect(lab.subtitle, 'Lab Report Due: 1d left');
+    });
+
+    test('inside the item day the due line counts hours', () {
+      final s = nowState(
+          r, [_item('ct', DateTime(2026, 11, 24, 15))], DateTime(2026, 11, 24, 9));
+      expect(s.kind, 'near');
+      expect(s.subtitle, 'CT Due: 6h left');
     });
 
     test('an item three days out does not count', () {
@@ -247,7 +254,7 @@ void main() {
       final s = nowState(r, [_item('presentation', DateTime(2026, 11, 24, 9))],
           DateTime(2026, 11, 22, 10));
       expect(s.kind, 'near');
-      expect(s.subtitle, 'Presentation Near');
+      expect(s.subtitle, 'Presentation Due: 2d left');
     });
   });
 }

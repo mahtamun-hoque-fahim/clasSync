@@ -98,6 +98,16 @@ DateTime examStart(Routine r, Exam e, DateTime now) {
   );
 }
 
+/// An item's due countdown for the card's third line: whole calendar days
+/// first ("2d left", "1d left"), then hours once the item is inside today
+/// ("24h left", counted up so the number holds for the whole hour).
+String dueLeft(DateTime now, DateTime at) {
+  final days = _calendarDays(now, at);
+  if (days >= 1) return '${days}d left';
+  final hours = (at.difference(now).inMinutes / 60).ceil();
+  return hours <= 1 ? '1h left' : '${hours}h left';
+}
+
 /// The exam card's third line: the date as dd-MM-yy ("30-02-26").
 String _examDate(Exam e) {
   final d = DateTime.parse(e.date);
@@ -160,10 +170,17 @@ NowState _classMode(Routine r, List<Ct> items, DateTime now) {
       if (sinceEnd < _homecomingMinutes) {
         return const NowState('homecoming', 'Now', 'Spider Man', 'Homecoming', 'bus');
       }
-      // Home. An item today (later) or tomorrow becomes the card's subtitle.
-      final incoming = _incomingLabel(items, now, maxDays: 1);
+      // Home. An item today (later) or tomorrow becomes the card's subtitle,
+      // with the specific time left ("Assignment Due: 1d left").
+      final incoming = _incomingItem(items, now, maxDays: 1);
       if (incoming != null) {
-        return NowState('incoming', 'Now', 'Home', '$incoming Incoming', 'home_alert');
+        return NowState(
+          'incoming',
+          'Now',
+          'Home',
+          '${ctKindLabel(incoming.kind)} Due: ${dueLeft(now, incoming.at)}',
+          'home_alert',
+        );
       }
       // Three hours into home on the eve of a day off: tomorrow's card.
       if (_tomorrowIsDayOff(r, now) &&
@@ -184,10 +201,10 @@ NowState _classMode(Routine r, List<Ct> items, DateTime now) {
 }
 
 /// Today-later (maxDays 1) or within [maxDays] calendar days, for incoming.
-String? _incomingLabel(List<Ct> items, DateTime now, {required int maxDays}) {
+Ct? _incomingItem(List<Ct> items, DateTime now, {required int maxDays}) {
   final next = _nextItem(items, now);
   if (next != null && _calendarDays(now, next.at) <= maxDays) {
-    return ctKindLabel(next.kind);
+    return next;
   }
   return null;
 }
@@ -222,7 +239,7 @@ NowState _dayOffState(List<Ct> items, DateTime now) {
       'near',
       'Now',
       'Day Off',
-      '${ctKindLabel(next.kind)} Near',
+      '${ctKindLabel(next.kind)} Due: ${dueLeft(now, next.at)}',
       'plane_landing',
     );
   }

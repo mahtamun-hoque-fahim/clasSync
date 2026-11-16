@@ -44,7 +44,15 @@ Set<int> _candidates(Routine r, List<Ct> items, DateTime date) {
   }
 
   for (final item in items) {
-    if (sameDate(item.at)) out.add(minuteOfDay(item.at));
+    if (!sameDate(item.at)) continue;
+    out.add(minuteOfDay(item.at));
+    // The due line counts hours inside the item's day: every hour mark in
+    // its last 24 h is a change point, the same treatment the exam gets.
+    final delta = item.at.difference(DateTime(date.year, date.month, date.day));
+    for (var k = 0; k <= 24; k++) {
+      final m = delta.inMinutes - k * 60;
+      if (m > 0 && m < 1440) out.add(m);
+    }
   }
   return out;
 }
@@ -61,11 +69,13 @@ List<StatePoint> dayTimeline(Routine r, List<Ct> items, DateTime date) {
       DateTime(date.year, date.month, date.day, m ~/ 60, m % 60),
     );
     // Only a change starts a new point; identical neighbours collapse. The
-    // label counts: the exam countdown ticks while its title stays put.
+    // label and the subtitle count: the exam countdown ticks in the label,
+    // an item's due line ticks hours in the subtitle.
     if (out.isEmpty ||
         out.last.state.kind != state.kind ||
         out.last.state.title != state.title ||
-        out.last.state.label != state.label) {
+        out.last.state.label != state.label ||
+        out.last.state.subtitle != state.subtitle) {
       out.add(StatePoint(m, state));
     }
   }
