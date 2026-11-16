@@ -78,13 +78,14 @@
                  line-height lever (clas43 proved multipliers do nothing
                  here). The dial is user-driven: -5dp halved the ~22px gaps
                  (measured clas63), then one "1x more" step added 2.5dp back
-                 (gaps land ~17px). Stays inside the empty font-box zone, so
+                 (gaps land ~17px), then "2% less" cut 2% of the card height
+                 (~2.4dp) off again. Stays inside the empty font-box zone, so
                  glyphs cannot collide. -->
             <TextView
                 android:id="@+id/nowMain"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="-2.5dp"
+                android:layout_marginTop="-4.9dp"
                 android:textSize="20sp"
                 android:lineSpacingMultiplier="0.4"
                 android:includeFontPadding="false"
@@ -101,7 +102,7 @@
                 android:id="@+id/stateSub"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="-2.5dp"
+                android:layout_marginTop="-4.9dp"
                 android:textSize="13sp"
                 android:lineSpacingMultiplier="0.4"
                 android:includeFontPadding="false"
@@ -113,7 +114,7 @@
                 android:id="@+id/nextLine"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="-1.5dp"
+                android:layout_marginTop="-3.9dp"
                 android:textSize="13sp"
                 android:lineSpacingMultiplier="0.4"
                 android:includeFontPadding="false"

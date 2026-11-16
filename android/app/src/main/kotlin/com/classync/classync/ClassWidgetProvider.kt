@@ -344,12 +344,12 @@ class ClassWidgetProvider : AppWidgetProvider() {
                     heightDp * density * fraction,
                 )
             // Text sizing: label and subtitle equal, title dominant. The
-            // dial is user-driven in 4% steps; 0.1165/0.2194 was the last
+            // dial is user-driven in 4% steps; 0.1118/0.2106 was the last
             // landing, then one step down (-4%).
-            sizeOf(R.id.nowLine, 0.1118f)
-            sizeOf(R.id.nowMain, 0.2106f)
-            sizeOf(R.id.stateSub, 0.1118f)
-            sizeOf(R.id.nextLine, 0.1118f)
+            sizeOf(R.id.nowLine, 0.1073f)
+            sizeOf(R.id.nowMain, 0.2022f)
+            sizeOf(R.id.stateSub, 0.1073f)
+            sizeOf(R.id.nextLine, 0.1073f)
             // The background goes through a resource on the inner card view,
             // never the layout root: the MIUI host keeps the initial-layout
             // root background and ignores runtime swaps of it, while
