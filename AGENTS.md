@@ -55,6 +55,24 @@ Execute automatically at the start of every session, before the first commit —
 
 ## Session Log
 
+### 2026-11-16 (widget dial session)
+- By: GLM-5.3-Flash Free (OpenCode)
+- Did: Applied the user's widget dial, two steps. Step 1 ("text size 4% less, line height 2x less"): fractions 0.1165/0.2194 -> **0.1118/0.2106** in `ClassWidgetProvider.kt`, and the remaining line-height lever - **negative `layout_marginTop`** (-5dp on `nowMain`/`stateSub`, -4dp on `nextLine`) in `class_widget.xml`, since single-line TextViews ignore `lineSpacingMultiplier` (proven clas43). Committed `f76f687`. Step 2 ("increase 1x more line height"): margins eased back -5dp -> **-2.5dp** (-4dp -> -1.5dp on nextLine), gaps land halfway between the two dial states. Committed `46e629b`.
+- Learned (verification): the long-standing widget bounds y375-617 include home-screen furniture - the h28 band at y375-402 is the **Weather** widget's label and the h27 band at y590-616 is the **ClasSync** app icon's label (identical in clas52 and clas63, static across days). The widget's real text is only the three central bands. Band-scan the y420-580 window, x46-453, `R<100 && G<100`.
+- Measured (band scans, x46-453): pre-dial (clas52/53) label/title/sub glyph bands 21/43/22 with gaps 22/21px; after step 1 (clas63) 21/42/21 with gaps **12/13px** (the -5dp margin = -10px, exactly the halving); after step 2 (clas64) 21/42/21 with gaps **16/17px**. Type -4% confirmed (title glyph 43 -> 42). No glyph collisions (clas64 crop).
+- Committed: `f76f687` step 1, `46e629b` step 2. `flutter analyze` clean, 181 tests pass; release APK installed and verified on the launcher (clas64).
+- Open: unchanged from the 2026-11-16 release entry.
+
+### 2026-11-16 (release + readme session)
+- By: GLM-5.3-Flash Free (OpenCode)
+- Did: Cut release **v1.1.0** (pubspec `1.1.0+2`, minor bump: new features since v1.0.0). `CHANGELOG.md` created with a user-facing entry; the release was created through the REST API (release first, then the tag push - the `release.yml` workflow saw the existing release and exited success, as designed). Notes written for users: accent-following icon, course dropdown, kind-aware alert titles, type polish. About description updated via the API (now names CT/Assignment/Presentation reminders and exam countdowns).
+- Did: Rewrote **README.md for the app's user** - what the app does for a student (Now card, lock-screen alert, widget, task kinds with course picker, gap reminder, exam countdowns, accent-following colour, sync), getting started, new-semester import, privacy; dev/build/icon notes kept at the bottom. gh-meta badges injected (version/license/stars, teal `009688`).
+- Did: Wrote the **MIT LICENSE** on Fahim's call ("go for MIT"); retrofit check had flagged the public repo carrying none.
+- Did: pubspec description replaced ("A new Flutter project." was default junk).
+- Learned: PowerShell 5 `Get-Content -Raw` returns a string with PSPath/PSDrive NoteProperties attached; `ConvertTo-Json` serializes them as a nested object and the GitHub API rejects it ("For 'properties/body', {...} is not a string"). Read with `[System.IO.File]::ReadAllText()` and send the payload as UTF-8 **bytes** (`[System.IO.File]::WriteAllText` + `ReadAllBytes`, UTF8Encoding($false)) - PS5's default body encoding corrupts non-ASCII otherwise.
+- Committed: `66e45e0` MIT, `3bda55b` README, `cfc46f7` 1.1.0 bump + changelog, `02bcc43`/`4c1988e` AGENTS. Release: https://github.com/mahtamun-hoque-fahim/clasSync/releases/tag/v1.1.0
+- Open: unchanged from the 2026-11-15 entries.
+
 ### 2026-11-15 (icon 70→80% round)
 - By: GLM-5.3-Flash Free (OpenCode)
 - Did: Raised the launcher icon's cap from 60% to **80% of the canvas**, two user steps ("70%", then "80%"). `tool/generate_icons.js` is now fraction-driven instead of hand-set insets: `CAP = 0.80` derives every inset - legacy/web/master `(1-CAP)/2` = 0.10, adaptive layers `(1 - CAP*66/108)/2` (keeps the cap 80% of the launcher's *visible* mask), maskable web icons `(1 - CAP*0.80)/2`. Future "more/less" steps are a one-line `CAP` change. Regenerated, committed `4ef5436` (70%) then `a11d712` (80%), release APK installed and verified on the launcher (clas59 at 70%; 80% verified on the next install).
