@@ -21,17 +21,21 @@
 
         <!-- Panel layer: the state panel keeps the reference grid's 35%
              width on the right through a spacer + weight pair, so the split
-             holds at any placed width. The bitmap is drawn from code at
-             exactly this size (right corners rounded like the card's). -->
+             holds at any placed width. The spacer must be a whitelisted
+             RemoteViews class (a bare View breaks MIUI's inflater - clas65
+             "Can't load widget"), so it is an empty TextView. The bitmap is
+             drawn from code at exactly this size (right corners rounded
+             like the card's). -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="horizontal">
 
-            <View
+            <TextView
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="65" />
+                android:layout_weight="65"
+                android:text="" />
 
             <ImageView
                 android:id="@+id/stateIcon"
