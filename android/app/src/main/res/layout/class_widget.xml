@@ -2,30 +2,54 @@
 <!-- The themed card lives on an inner view, not the layout root: the MIUI
      host ignores runtime background changes on the RemoteViews root and keeps
      the initial-layout background, so the root stays transparent and only
-     widgetCard is swapped (light/dark) from code. Reference layout: a white
-     text panel on the left (three lines, all dark ink) and the accent-gradient
-     state panel filling the card's full height on the right (one bitmap from
-     code, so the accent follows the app and the right corners stay rounded).
-     Colors are set from code so they come from the widget snapshot. -->
+     widgetCard is swapped (light/dark) from code. Reference layout: the
+     accent-gradient state panel fills the card's right 35% (one bitmap from
+     code, so the accent follows the app and the right corners stay rounded)
+     and the text layer sits over the full card, so a long headline runs over
+     the panel instead of being clipped at the old 65% column edge. Colors
+     are set from code so they come from the widget snapshot. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widgetRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/widgetCard"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="horizontal"
         android:background="@drawable/widget_bg">
 
-        <!-- The text column takes 65% of the card (reference grid), the
-             panel 35%, so the split holds at any placed width. -->
+        <!-- Panel layer: the state panel keeps the reference grid's 35%
+             width on the right through a spacer + weight pair, so the split
+             holds at any placed width. The bitmap is drawn from code at
+             exactly this size (right corners rounded like the card's). -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="65" />
+
+            <ImageView
+                android:id="@+id/stateIcon"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="35"
+                android:scaleType="fitXY"
+                android:contentDescription="@string/widget_state_icon"
+                android:src="@android:color/transparent" />
+        </LinearLayout>
+
+        <!-- Text layer: full card width over the panel, same paddings and
+             vertical gravity as the old 65% column, so the placed geometry
+             of every line is unchanged. -->
         <LinearLayout
             android:id="@+id/widgetText"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="65"
             android:orientation="vertical"
             android:gravity="center_vertical"
             android:paddingStart="28dp"
@@ -63,6 +87,10 @@
                 android:textStyle="bold"
                 android:singleLine="true"
                 android:ellipsize="end"
+                android:shadowColor="#FFFFFF"
+                android:shadowDx="0"
+                android:shadowDy="3"
+                android:shadowRadius="1"
                 android:text="" />
 
             <TextView
@@ -89,17 +117,5 @@
                 android:ellipsize="end"
                 android:text="NEXT" />
         </LinearLayout>
-
-        <!-- The state panel: full card height, 35% of the width, its bitmap
-             drawn from code at exactly this size (right corners rounded like
-             the card's). -->
-        <ImageView
-            android:id="@+id/stateIcon"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="35"
-            android:scaleType="fitXY"
-            android:contentDescription="@string/widget_state_icon"
-            android:src="@android:color/transparent" />
-    </LinearLayout>
+    </FrameLayout>
 </FrameLayout>
