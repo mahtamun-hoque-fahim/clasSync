@@ -13,7 +13,9 @@ String ctKindLabel(String kind) => switch (kind) {
 class Ct {
   /// Firestore doc id. Empty for a CT that has not been saved yet.
   final String id;
-  final String course;
+  /// The course this task belongs to - optional. When absent the task has no
+  /// course time, so its due line can never count below one day.
+  final String? course;
   final DateTime at;
   final String? room, note;
 
@@ -25,7 +27,7 @@ class Ct {
 
   const Ct({
     required this.id,
-    required this.course,
+    this.course,
     required this.at,
     this.room,
     this.note,
@@ -51,7 +53,8 @@ class Ct {
     final note = json['note'];
     final kind = json['kind'];
     final remindBefore = json['remindBefore'] ?? const [];
-    if (course is! String || course.isEmpty || at is! num) return null;
+    if (course != null && course is! String) return null;
+    if (at is! num) return null;
     if (room != null && room is! String) return null;
     if (note != null && note is! String) return null;
     if (kind != null && !ctKinds.contains(kind)) return null;

@@ -120,7 +120,10 @@ void main() {
   test('malformed docs are skipped, not read as expired', () {
     expect(Ct.tryFromJson('a', {'course': 'DLD'}), isNull);
     expect(Ct.tryFromJson('a', {'course': 'DLD', 'at': 'soon'}), isNull);
-    expect(Ct.tryFromJson('a', {'at': 0}), isNull);
+    expect(
+      Ct.tryFromJson('a', {'at': 0}),
+      isNotNull, // course is now optional; only `at` is required
+    );
     expect(
       Ct.tryFromJson('a', {
         'course': 'DLD',

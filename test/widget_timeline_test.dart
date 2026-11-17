@@ -71,7 +71,7 @@ void main() {
       [_item('ct', DateTime(2026, 11, 20, 9))],
     );
     final wed = days['2026-11-18']!;
-    expect(wed.single['s'], 'CT Due: 2d left');
+    expect(wed.single['s'], 'Math-3: 2d left');
     // Tue 24th: the CT is long past, so the (empty-grid) day relaxes.
     final tue = days['2026-11-24']!;
     expect(tue.single['t'], 'Day Off');
@@ -86,10 +86,10 @@ void main() {
     final tue = days['2026-11-24']!;
     final due = [
       for (final p in tue)
-        if ((p['s'] as String).startsWith('CT Due')) p['s'],
+        if ((p['s'] as String).startsWith('Math-3:')) p['s'],
     ];
-    expect(due.first, 'CT Due: 15h left');
-    expect(due.last, 'CT Due: 1h left');
+    expect(due.first, 'Math-3: 15h left');
+    expect(due.last, 'Math-3: 1h left');
     // One point per hour: 15, 14, ... 1. The 15:00 point itself drops the
     // item (its time has arrived), so the card relaxes there.
     expect(due, hasLength(15));

@@ -74,16 +74,6 @@ List<NowSlot> daySlots(Routine r, String day) {
 int _minuteOf(DateTime t) => t.hour * 60 + t.minute;
 
 /// The next scheduled item still in the future, or null.
-Ct? _nextItem(List<Ct> items, DateTime now) {
-  Ct? best;
-  for (final item in items) {
-    if (item.at.isAfter(now) && (best == null || item.at.isBefore(best.at))) {
-      best = item;
-    }
-  }
-  return best;
-}
-
 /// The exam's absolute start moment: its date at its own time, or the
 /// routine's shared exam time.
 DateTime examStart(Routine r, Exam e, DateTime now) {
@@ -101,11 +91,41 @@ DateTime examStart(Routine r, Exam e, DateTime now) {
 /// An item's due countdown for the card's third line: whole calendar days
 /// first ("2d left", "1d left"), then hours once the item is inside today
 /// ("24h left", counted up so the number holds for the whole hour).
-String dueLeft(DateTime now, DateTime at) {
+///
+/// When [hasCourse] is false (no course chosen) the line can never count
+/// below one day - even a task due later today reads "1d left". When a
+/// course is chosen the countdown switches to hours inside the item's day.
+String dueLeft(DateTime now, DateTime at, {required bool hasCourse}) {
   final days = _calendarDays(now, at);
+  if (!hasCourse) {
+    return days >= 1 ? '${days}d left' : '1d left';
+  }
   if (days >= 1) return '${days}d left';
   final hours = (at.difference(now).inMinutes / 60).ceil();
   return hours <= 1 ? '1h left' : '${hours}h left';
+}
+
+/// Summarises the items due within [maxDays] calendar days for the card's
+/// third line. A single item reads "{name}: {time left}"; several read
+/// "{n} tasks, {closest name}: {closest time left}". The closest item is the
+/// one with the earliest [at]. Returns null when nothing is due in the window.
+String? dueSummary(List<Ct> items, DateTime now, {required int maxDays}) {
+  final upcoming = <Ct>[];
+  for (final item in items) {
+    if (item.at.isAfter(now) && _calendarDays(now, item.at) <= maxDays) {
+      upcoming.add(item);
+    }
+  }
+  if (upcoming.isEmpty) return null;
+  upcoming.sort((a, b) => a.at.compareTo(b.at));
+  final closest = upcoming.first;
+  final name = closest.course?.isNotEmpty == true
+      ? closest.course!
+      : ctKindLabel(closest.kind);
+  final hasCourse = closest.course?.isNotEmpty == true;
+  final left = dueLeft(now, closest.at, hasCourse: hasCourse);
+  if (upcoming.length == 1) return '$name: $left';
+  return '${upcoming.length} tasks, $name: $left';
 }
 
 /// The exam card's third line: the date as dd-MM-yy ("30-02-26").
@@ -171,16 +191,11 @@ NowState _classMode(Routine r, List<Ct> items, DateTime now) {
         return const NowState('homecoming', 'Now', 'Spider Man', 'Homecoming', 'bus');
       }
       // Home. An item today (later) or tomorrow becomes the card's subtitle,
-      // with the specific time left ("Assignment Due: 1d left").
-      final incoming = _incomingItem(items, now, maxDays: 1);
-      if (incoming != null) {
-        return NowState(
-          'incoming',
-          'Now',
-          'Home',
-          '${ctKindLabel(incoming.kind)} Due: ${dueLeft(now, incoming.at)}',
-          'home_alert',
-        );
+      // with the specific time left ("Assignment Due: 1d left", or several:
+      // "2 tasks, Math-3: 1d left").
+      final summary = dueSummary(items, now, maxDays: 1);
+      if (summary != null) {
+        return NowState('incoming', 'Now', 'Home', summary, 'home_alert');
       }
       // Three hours into home on the eve of a day off: tomorrow's card.
       if (_tomorrowIsDayOff(r, now) &&
@@ -198,15 +213,6 @@ NowState _classMode(Routine r, List<Ct> items, DateTime now) {
   }
   // Not a class day (or a class day with no classes in the grid): day off.
   return _dayOffState(items, now);
-}
-
-/// Today-later (maxDays 1) or within [maxDays] calendar days, for incoming.
-Ct? _incomingItem(List<Ct> items, DateTime now, {required int maxDays}) {
-  final next = _nextItem(items, now);
-  if (next != null && _calendarDays(now, next.at) <= maxDays) {
-    return next;
-  }
-  return null;
 }
 
 /// A day off for the next calendar day: not in the routine's days, or in
@@ -233,15 +239,9 @@ NowState _classNow(NowSlot s, NowSlot? next) {
 // --- day off --------------------------------------------------------------
 
 NowState _dayOffState(List<Ct> items, DateTime now) {
-  final next = _nextItem(items, now);
-  if (next != null && _calendarDays(now, next.at) <= 2) {
-    return NowState(
-      'near',
-      'Now',
-      'Day Off',
-      '${ctKindLabel(next.kind)} Due: ${dueLeft(now, next.at)}',
-      'plane_landing',
-    );
+  final summary = dueSummary(items, now, maxDays: 2);
+  if (summary != null) {
+    return NowState('near', 'Now', 'Day Off', summary, 'plane_landing');
   }
   return const NowState('dayOff', 'Now', 'Day Off', 'Relaxing', 'plane');
 }
