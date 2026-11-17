@@ -134,7 +134,9 @@ class _HomePageState extends State<HomePage> {
           Card(
             child: ListTile(
               title: Text(
-                ct.room == null ? ct.course : '${ct.course} · ${ct.room}',
+                ct.room == null
+                    ? (ct.course ?? 'Untitled')
+                    : '${ct.course ?? 'Untitled'} · ${ct.room}',
               ),
               subtitle: Text(
                 '${ctKindLabel(ct.kind)} · ${formatCtTime(ct.at)}',
